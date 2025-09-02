@@ -31,22 +31,20 @@ services:
       retries: 5
   
   user_service:
-    build:
-    context: ./user_service
-    dockerfile: Dockerfile
+    build: ./user_service
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}   
-    restart: on-failure
-    volumes:
-      - ./postgres/pgdata:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
       timeout: 5s
       retries: 5
-
-
+    restart: on-failure
+    ports:
+      - "8000:8000"
 
 volumes:
   redis-data:
