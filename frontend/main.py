@@ -64,5 +64,16 @@ async def delete_user(request: Request):
     if "username" not in data:
         return JSONResponse(content={"error": "Missing username field"}, status_code=400)
 
-    request = requests.post(f"http://user_service:8000/delete_user", json=data)
-    return JSONResponse(content=request.json(), status_code=request.status_code)
+    response = requests.post(f"http://user_service:8000/delete_user", json=data)
+    return JSONResponse(content=response.json(), status_code=response.status_code)
+
+@app.post("/login")
+async def login_user(request: Request):
+    data = await request.json()
+    if "username" not in data or "password" not in data:
+        return JSONResponse(content={"error": "Username or password are null"}, status_code=400)
+    
+    response = requests.post("https://user_service:8000/login", cookies=request.cookies)
+    if response.status_code >= 400:
+        return JSONResponse(content={"error": "Error while login has happened."}, status_code=500)
+    return JSONResponse(content=response.json(), status_code=response.status_code)

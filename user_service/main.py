@@ -6,6 +6,7 @@ import secrets
 import redis
 import uuid
 import json
+import requests
 
 app = FastAPI()
 
@@ -84,3 +85,16 @@ async def delete_user(request: Request):
 
         db.delete_user(db_conn, username)
         return JSONResponse(content={"message": "User deleted successfully"}, status_code=200)
+
+@app.post("/login")
+async def login_user(request: Request):
+    data = await request.json()
+    if "username" not in data or "password" not in data:
+        return JSONResponse(content={"error": "Username or password are null"}, status_code=400)
+
+    with db.db_connection() as db_conn:
+        user = db.get_user(db_conn, data["username"])
+        if not user:
+            return JSONResponse(content={"error": "User not found"}, status_code=404)
+        if bcrypt.checkpw(user.password.encode('utf-8'), user["password_hash"].encode('utf-8')):
+        return JSONResponse(content=user, status_code=200)
