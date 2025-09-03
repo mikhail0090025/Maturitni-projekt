@@ -1,12 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration</title>
-    <link rel="stylesheet" href="/styles/styles.css">
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/styles/styles.css">
+{% endblock %}
+
+{% block content %}
     <div class="auth-card">
         <h1>Registration Page</h1><br>
         <form action="#" method="post" class="auth-form">
@@ -31,5 +31,4 @@
         <div></div>
     </div>
     <script src="/js/registration.js"></script>
-</body>
-</html>
+{% endblock %}

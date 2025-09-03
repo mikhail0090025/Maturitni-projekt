@@ -7,6 +7,7 @@ import redis
 import uuid
 import json
 import requests
+r = redis.Redis(host="redis", port=6379, db=0)
 
 app = FastAPI()
 
@@ -96,5 +97,47 @@ async def login_user(request: Request):
         user = db.get_user(db_conn, data["username"])
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=404)
-        if bcrypt.checkpw(user.password.encode('utf-8'), user["password_hash"].encode('utf-8')):
+        
+        if bcrypt.checkpw(data["password"].encode("utf-8"), user["password_hash"].encode("utf-8")):
+            session_id = secrets.token_hex(16)
+            r.set(session_id, user["username"], ex=3600)
+            response = JSONResponse(content=user, status_code=200)
+            response.set_cookie(
+                key="session_id",
+                value=session_id,
+                httponly=True,
+                secure=False,
+                max_age=3600,
+                path="/"
+            )
+            return response
+        
+        return JSONResponse(content={"error": "Wrong password"}, status_code=401)
+
+@app.post("/logout")
+async def logout_user(request: Request):
+    session_id = request.cookies.get("session_id")
+    if session_id:
+        r.delete(session_id)
+        response = JSONResponse(content={"message": "Logged out successfully"}, status_code=200)
+        response.delete_cookie(key="session_id", path="/")
+        return response
+    return JSONResponse(content={"error": "No active session"}, status_code=400)
+
+@app.get("/me")
+async def get_current_user(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return JSONResponse(content={"error": "Not authenticated"}, status_code=401)
+
+    username = r.get(session_id)
+    if not username:
+        return JSONResponse(content={"error": "Session expired or invalid"}, status_code=401)
+
+    username = username.decode("utf-8")
+    with db.db_connection() as db_conn:
+        user = db.get_user(db_conn, username)
+        if not user:
+            return JSONResponse(content={"error": "User not found"}, status_code=404)
+        user.pop("password_hash", None)
         return JSONResponse(content=user, status_code=200)

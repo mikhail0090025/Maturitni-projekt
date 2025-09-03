@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import bcrypt
@@ -24,13 +24,33 @@ def root():
 def health():
     return JSONResponse(content={"status": "ok"}, status_code=200)
 
+''' Pages '''
+
 @app.get("/registration_page")
 def registration_page(request: Request):
     return templates.TemplateResponse("registration.html", {"request": request})
 
 @app.get("/login_page")
 def login_page_endpoint_get(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.json().get("username"):
+        return RedirectResponse(url="/profile_page")
+
     return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/profile_page")
+def profile_page_endpoint_get(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = response_to_user.json()
+    return templates.TemplateResponse("mainpage.html", {"request": request, "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"]})
 
 ''' User service endpoints '''
 
@@ -67,13 +87,42 @@ async def delete_user(request: Request):
     response = requests.post(f"http://user_service:8000/delete_user", json=data)
     return JSONResponse(content=response.json(), status_code=response.status_code)
 
+''' Functional endpoints '''
+
 @app.post("/login")
 async def login_user(request: Request):
     data = await request.json()
     if "username" not in data or "password" not in data:
         return JSONResponse(content={"error": "Username or password are null"}, status_code=400)
-    
-    response = requests.post("https://user_service:8000/login", cookies=request.cookies)
+
+    response = requests.post(
+        "http://user_service:8000/login",
+        cookies=request.cookies,
+        json=data
+    )
+
     if response.status_code >= 400:
         return JSONResponse(content={"error": "Error while login has happened."}, status_code=500)
-    return JSONResponse(content=response.json(), status_code=response.status_code)
+
+    user_data = response.json()
+    cookie_header = response.headers.get("set-cookie")
+
+    resp = JSONResponse(content=user_data, status_code=response.status_code)
+    if cookie_header:
+        resp.headers["set-cookie"] = cookie_header
+
+    return resp
+
+@app.post("/logout")
+async def logout_user(request: Request):
+    response = requests.post(
+        "http://user_service:8000/logout",
+        cookies=request.cookies
+    )
+
+    if response.status_code >= 400:
+        return JSONResponse(content={"error": "Error while logout has happened."}, status_code=500)
+
+    resp = JSONResponse(content=response.json(), status_code=response.status_code)
+    resp.delete_cookie("session_id", path="/")
+    return resp

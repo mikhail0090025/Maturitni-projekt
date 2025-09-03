@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>{{ name }} {{ surname }}</h1>
+        <h4>{{ username }}</h4>
+        <button id="logout_button">Logout</button>
+    </div>
+    <script src="/js/profile.js"></script>
+{% endblock %}

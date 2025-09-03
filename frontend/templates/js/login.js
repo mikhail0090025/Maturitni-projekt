@@ -12,17 +12,19 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(data);
 
         try {
-            const response = await fetch("/login_user", {
+            const response = await fetch("/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                credentials: "include"
             });
 
             const json = await response.json();
             if (response.ok) {
                 resultDiv.textContent = json.message || "Login successful!";
+                window.location.href = "/profile_page";
             } else {
                 console.log(json);
                 resultDiv.textContent = json.error || "Invalid username or password!";
