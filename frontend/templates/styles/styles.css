@@ -1,6 +1,3 @@
-/* auth.css — общий стиль для страниц регистрации и логина */
-
-/* CSS-переменные — легко менять тему */
 :root{
   --bg: #f6f8fb;
   --card: #ffffff;
@@ -145,7 +142,7 @@ body {
 @media (min-width: 980px){
   .auth-card{
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 1fr 30px;
     gap: 24px;
     align-items: center;
   }
