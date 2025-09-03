@@ -46,6 +46,22 @@ services:
     ports:
       - "8000:8000"
 
+  frontend:
+    build: ./frontend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    ports:
+      - "8001:8001"
+
 volumes:
   redis-data:
 #   pgadmin-data:
