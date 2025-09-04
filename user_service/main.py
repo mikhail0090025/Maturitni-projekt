@@ -72,7 +72,7 @@ async def edit_user(request: Request):
         db.update_user(db_conn, username, new_name, new_surname, new_username, new_password_hash, new_born_date)
         return JSONResponse(content={"message": "User updated successfully"}, status_code=200)
 
-@app.post("/delete_user")
+@app.delete("/delete_user")
 async def delete_user(request: Request):
     with db.db_connection() as db_conn:
         data = await request.json()
@@ -80,6 +80,25 @@ async def delete_user(request: Request):
             return JSONResponse(content={"error": "Missing username field"}, status_code=400)
 
         username = data["username"]
+        user = db.get_user(db_conn, username)
+        if not user:
+            return JSONResponse(content={"error": "User not found"}, status_code=404)
+
+        db.delete_user(db_conn, username)
+        return JSONResponse(content={"message": "User deleted successfully"}, status_code=200)
+
+@app.delete("/delete_me")
+async def delete_user(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return JSONResponse(content={"error": "Not authenticated"}, status_code=401)
+
+    username = r.get(session_id)
+    if not username:
+        return JSONResponse(content={"error": "Session expired or invalid"}, status_code=401)
+
+    username = username.decode("utf-8")
+    with db.db_connection() as db_conn:
         user = db.get_user(db_conn, username)
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=404)

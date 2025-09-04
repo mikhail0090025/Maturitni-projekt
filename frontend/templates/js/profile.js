@@ -13,3 +13,7 @@ document.getElementById("logout_button").addEventListener("click", async () => {
         console.error("Service unavailable: " + err.message);
     }
 });
+
+document.getElementById("settings_button").addEventListener("click", async () => {
+    window.location.href = "/settings_page";
+});

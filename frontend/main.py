@@ -52,6 +52,17 @@ def profile_page_endpoint_get(request: Request):
     user_data = response_to_user.json()
     return templates.TemplateResponse("mainpage.html", {"request": request, "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"]})
 
+@app.get("/settings_page")
+def profile_page_endpoint_get(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = response_to_user.json()
+    return templates.TemplateResponse("settings.html", {"request": request, "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"]})
+
 ''' User service endpoints '''
 
 @app.post("/register")
@@ -78,13 +89,18 @@ async def edit_user(request: Request):
     request = requests.post(f"http://user_service:8000/edit_user", json=data)
     return JSONResponse(content=request.json(), status_code=request.status_code)
 
-@app.post("/delete_user")
+@app.delete("/delete_user")
 async def delete_user(request: Request):
     data = await request.json()
     if "username" not in data:
         return JSONResponse(content={"error": "Missing username field"}, status_code=400)
 
     response = requests.post(f"http://user_service:8000/delete_user", json=data)
+    return JSONResponse(content=response.json(), status_code=response.status_code)
+
+@app.delete("/delete_me")
+async def delete_user(request: Request):
+    response = requests.delete(f"http://user_service:8000/delete_me", cookies=request.cookies)
     return JSONResponse(content=response.json(), status_code=response.status_code)
 
 ''' Functional endpoints '''

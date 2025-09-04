@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/styles/styles.css">
+{% endblock %}
+
+{% block content %}
+<h3>Settings</h3>
+<a href="/profile_page">
+    <button class="btn btn-outline-primary">Back</button>
+</a>
+<button class="btn btn-outline-danger" id="delete-account-button">Delete Account</button>
+<script src="/js/settings.js"></script>
+{% endblock %}
