@@ -3,7 +3,7 @@
 {% block title %}Settings{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/styles/styles.css">
+<!-- <link rel="stylesheet" href="/styles/styles.css"> -->
 {% endblock %}
 
 {% block content %}
@@ -12,5 +12,23 @@
     <button class="btn btn-outline-primary">Back</button>
 </a>
 <button class="btn btn-outline-danger" id="delete-account-button">Delete Account</button>
+<div>
+    <div>
+        <label for="new_username">Username</label>
+        <input type="text" id="new_username" value="{{ username }}">
+    </div>
+    <div>
+        <label for="new_name">Name</label>
+        <input type="text" id="new_name" value="{{ name }}">
+    </div>
+    <div>
+        <label for="new_surname">Surname</label>
+        <input type="text" id="new_surname" value="{{ surname }}">
+    </div>
+    <div>
+        <label for="new_birth_date">Birth date</label>
+        <input type="date" id="new_birth_date" value="{{ birth_date }}">
+    </div>
+</div>
 <script src="/js/settings.js"></script>
 {% endblock %}

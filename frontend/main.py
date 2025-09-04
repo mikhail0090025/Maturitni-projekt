@@ -61,7 +61,7 @@ def profile_page_endpoint_get(request: Request):
     if response_to_user.status_code >= 400:
         return RedirectResponse(url="/login_page")
     user_data = response_to_user.json()
-    return templates.TemplateResponse("settings.html", {"request": request, "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"]})
+    return templates.TemplateResponse("settings.html", {"request": request, "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "birth_date": user_data["birth_date"]})
 
 ''' User service endpoints '''
 

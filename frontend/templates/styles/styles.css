@@ -169,3 +169,7 @@ a:hover { text-decoration: underline; }
 
 /* If your existing HTML uses <br> heavily, this makes spacing nicer */
 form br { display: none; }
+
+a button {
+  text-decoration: none;
+}
