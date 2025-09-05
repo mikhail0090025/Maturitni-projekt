@@ -8,10 +8,14 @@
 
 {% block content %}
     <div>
-        <h1>{{ name }} {{ surname }}</h1>
-        <h4>{{ username }}</h4>
-        <button id="logout_button" class="btn btn-outline-danger">Logout</button>
-        <button id="settings_button" class="btn btn-outline-primary">Settings</button>
+        <div class="inline-block">
+            <h1>{{ name }} {{ surname }}</h1>
+            <h4>{{ username }}</h4>
+        </div>
+        <div class="inline-block">
+            <button id="logout_button" class="btn btn-outline-danger">Logout</button>
+            <button id="settings_button" class="btn btn-outline-primary">Settings</button>
+        </div>
     </div>
     <script src="/js/profile.js"></script>
 {% endblock %}

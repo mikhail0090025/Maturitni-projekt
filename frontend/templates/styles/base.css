@@ -76,3 +76,9 @@ footer {
     font-size: 0.9rem;
     margin-top: auto;
 }
+
+.inline-block {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 20px;
+}
