@@ -7,3 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     born_date DATE NOT NULL,
     registration_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users
+ADD COLUMN bio VARCHAR(100) DEFAULT '';

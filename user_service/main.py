@@ -53,7 +53,7 @@ async def get_user(username: str):
 async def edit_user(request: Request):
     with db.db_connection() as db_conn:
         data = await request.json()
-        required_fields = ["username", "new_name", "new_surname", "new_username", "new_password", "new_born_date"]
+        required_fields = ["username", "new_name", "new_surname", "new_username", "new_born_date", "new_bio"]
         if not all(field in data for field in required_fields):
             return JSONResponse(content={"error": "Missing required fields"}, status_code=400)
 
@@ -61,15 +61,15 @@ async def edit_user(request: Request):
         new_name = data["new_name"]
         new_surname = data["new_surname"]
         new_username = data["new_username"]
-        new_password = data["new_password"]
         new_born_date = data["new_born_date"]
+        new_bio = data["new_bio"]
 
         user = db.get_user(db_conn, username)
         if not user:
             return JSONResponse(content={"error": "User not found"}, status_code=404)
 
-        new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        db.update_user(db_conn, username, new_name, new_surname, new_username, new_password_hash, new_born_date)
+        # new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        db.update_user(db_conn, username, new_name, new_surname, new_username, user['password_hash'], new_born_date, new_bio)
         return JSONResponse(content={"message": "User updated successfully"}, status_code=200)
 
 @app.delete("/delete_user")

@@ -30,7 +30,7 @@ def insert_user(db, name, surname, username, password_hash, born_date):
 
 def get_user(db, username):
     result = db.execute(
-        text("SELECT name, surname, username, born_date, password_hash FROM users WHERE username=:u"),
+        text("SELECT name, surname, username, born_date, password_hash, bio FROM users WHERE username=:u"),
         {"u": username}
     ).fetchone()
     if result:
@@ -39,11 +39,12 @@ def get_user(db, username):
             "surname": result[1],
             "username": result[2],
             "born_date": str(result[3]),
-            "password_hash": result[4]
+            "password_hash": result[4],
+            "bio": result[5],
         }
     return None
 
-def update_user(db, username, new_name, new_surname, new_username, new_password_hash, new_born_date):
+def update_user(db, username, new_name, new_surname, new_username, new_password_hash, new_born_date, new_bio):
     db.execute(
         text("""
             UPDATE users
@@ -51,7 +52,8 @@ def update_user(db, username, new_name, new_surname, new_username, new_password_
                 surname = :s,
                 username = :u,
                 password_hash = :p,
-                born_date = :b
+                born_date = :b,
+                bio = :bi
             WHERE username = :old_u
         """),
         {
@@ -60,6 +62,7 @@ def update_user(db, username, new_name, new_surname, new_username, new_password_
             "u": new_username,
             "p": new_password_hash,
             "b": new_born_date,
+            "bi": new_bio,
             "old_u": username
         }
     )
@@ -75,7 +78,7 @@ def delete_user(db, username):
 ''' For testing purposes only '''
 def get_all_users(db):
     result = db.execute(
-        text("SELECT name, surname, username, born_date FROM users")
+        text("SELECT name, surname, username, born_date, bio FROM users")
     ).fetchall()
     if result:
         return result

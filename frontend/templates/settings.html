@@ -13,6 +13,7 @@
 </a>
 <button class="btn btn-outline-danger" id="delete-account-button">Delete Account</button>
 <div>
+    <input type="hidden" id="initial_username" value="{{ username }}">
     <div>
         <label for="new_username">Username</label>
         <input type="text" id="new_username" value="{{ username }}">
@@ -26,9 +27,14 @@
         <input type="text" id="new_surname" value="{{ surname }}">
     </div>
     <div>
-        <label for="new_birth_date">Birth date</label>
-        <input type="date" id="new_birth_date" value="{{ birth_date }}">
+        <label for="new_born_date">Birth date</label>
+        <input type="date" id="new_born_date" value="{{ born_date }}">
     </div>
+    <div>
+        <label for="new_bio">Bio:</label>
+        <textarea name="new_bio" id="new_bio">{{ bio }}</textarea>
+    </div>
+    <button class="btn btn-outline-primary" id="update-account-button">Update</button>
 </div>
 <script src="/js/settings.js"></script>
 {% endblock %}
