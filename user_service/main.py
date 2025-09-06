@@ -7,14 +7,14 @@ import redis
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-DB_SERVICE = os.getenv("DB_SERVICE_URL", "http://db_service:8000")
+DB_SERVICE = os.getenv("DB_SERVICE_URL", "http://db_service:8002")
 REQUEST_TIMEOUT = 5
 
 REDIS_HOST = "redis"
 REDIS_PORT = 6379
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=False)
 
-app = FastAPI(title="User Service (gateway to db_service)")
+app = FastAPI(title="User Service")
 
 def _db_get_user(username: str):
     try:

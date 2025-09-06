@@ -6,6 +6,9 @@ from sqlalchemy import pool
 from alembic import context
 
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+import models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,20 +19,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-DB_USER = os.environ.get("POSTGRES_USER", "postgres")
-DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "postgres")
+DB_USER = os.environ.get("POSTGRES_USER", "nn_manager")
+DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "change_me")
 DB_HOST = "postgres"
 DB_PORT = "5432"
-DB_NAME = os.environ.get("POSTGRES_DB", "mydb")
+DB_NAME = os.environ.get("POSTGRES_DB", "nn_manager_db")
 DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = models.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

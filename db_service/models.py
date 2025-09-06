@@ -1,7 +1,15 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, func
+from enum import Enum
+from sqlalchemy import Column, Integer, String, Date, DateTime, func, ForeignKey, Enum as EnumType
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
+class DataType(Enum):
+    NOISE = "noise"
+    IMAGE = "image"
+    NUMBERS = "numbers"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -14,3 +22,35 @@ class User(Base):
     born_date = Column(Date, nullable=False)
     bio = Column(String(100), default="")
     registration_date = Column(DateTime(timezone=True), server_default=func.now())
+
+    projects = relationship("Project", back_populates="owner")
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(255), default="")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    owner_username = Column(String(50), ForeignKey("users.username"), nullable=False)
+
+    owner = relationship("User", back_populates="projects")
+
+    fixed_properties = relationship(
+        "ProjectFixedProperties",
+        uselist=False,
+        back_populates="project",
+        cascade="all, delete-orphan"
+    )
+
+
+class ProjectFixedProperties(Base):
+    __tablename__ = "project_fixed_properties"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    input_type = Column(EnumType(DataType), nullable=False)
+    output_type = Column(EnumType(DataType), nullable=False)
+
+    project = relationship("Project", back_populates="fixed_properties")

@@ -6,6 +6,8 @@ import models
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://nn_manager:secret@postgres:5432/nn_manager_db")
 engine = create_engine(DATABASE_URL, future=True)
 
+models.Base.metadata.create_all(bind=engine)
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def insert_user(name, surname, username, password_hash, born_date, bio=""):

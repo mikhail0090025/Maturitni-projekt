@@ -1,0 +1,2 @@
+docker-compose exec db_service alembic revision --autogenerate -m "initial migration"
+docker-compose exec db_service alembic upgrade head
