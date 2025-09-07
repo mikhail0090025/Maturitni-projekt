@@ -10,6 +10,8 @@ models.Base.metadata.create_all(bind=engine)
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
+"""CRUD operations for User model"""
+
 def insert_user(name, surname, username, password_hash, born_date, bio=""):
     with SessionLocal() as session:
         user = models.User(
@@ -83,4 +85,79 @@ def get_all_users():
                 "born_date": str(u.born_date),
                 "bio": u.bio
             } for u in users
+        ]
+
+"""CRUD operations for Project model"""
+
+def insert_project(name, description, owner_username, input_type, output_type):
+    with SessionLocal() as session:
+        project = models.Project(
+            name=name,
+            description=description,
+            owner_username=owner_username,
+            input_type=input_type,
+            output_type=output_type
+        )
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+        return project
+
+def get_project(id):
+    with SessionLocal() as session:
+        project = session.query(models.Project).filter_by(id=id).first()
+        if project:
+            return {
+                "name": project.name,
+                "description": project.description,
+                "owner_username": project.owner_username,
+                "input_type": project.input_type.value,
+                "output_type": project.output_type.value,
+                "created_at": str(project.created_at)
+            }
+        return None
+
+def update_project(id, new_name=None, new_description=None, new_owner_username=None,
+                   new_input_type=None, new_output_type=None):
+    with SessionLocal() as session:
+        project = session.query(models.Project).filter_by(id=id).first()
+        if not project:
+            return None
+
+        if new_name is not None:
+            project.name = new_name
+        if new_description is not None:
+            project.description = new_description
+        if new_owner_username is not None:
+            project.owner_username = new_owner_username
+        if new_input_type is not None:
+            project.input_type = new_input_type
+        if new_output_type is not None:
+            project.output_type = new_output_type
+
+        session.commit()
+        session.refresh(project)
+        return project
+
+def delete_project(id):
+    with SessionLocal() as session:
+        project = session.query(models.Project).filter_by(id=id).first()
+        if not project:
+            return False
+        session.delete(project)
+        session.commit()
+        return True
+
+def get_all_projects():
+    with SessionLocal() as session:
+        projects = session.query(models.Project).all()
+        return [
+            {
+                "name": p.name,
+                "description": p.description,
+                "owner_username": p.owner_username,
+                "input_type": p.input_type.value,
+                "output_type": p.output_type.value,
+                "created_at": str(p.created_at)
+            } for p in projects
         ]

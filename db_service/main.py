@@ -1,10 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, APIRouter
 from pydantic import BaseModel
 from typing import Optional, List
 import db
+from models import DataType
 from fastapi.responses import JSONResponse
 
 app = FastAPI(title="DB Service")
+
+''' CRUD endpoints for users'''
 
 class UserCreate(BaseModel):
     name: str
@@ -70,6 +73,86 @@ def delete_user(username: str):
 def list_users():
     return db.get_all_users()
 
+''' CRUD endpoints for projects '''
+
+router = APIRouter(prefix="/projects", tags=["projects"])
+
+# --- Schemas ---
+class ProjectCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    owner_username: str
+    input_type: DataType
+    output_type: DataType
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    owner_username: Optional[str] = None
+    input_type: Optional[DataType] = None
+    output_type: Optional[DataType] = None
+
+
+# --- Endpoints ---
+@router.post("/", response_model=dict)
+def create_project(project: ProjectCreate):
+    new_project = db.insert_project(
+        name=project.name,
+        description=project.description,
+        owner_username=project.owner_username,
+        input_type=project.input_type,
+        output_type=project.output_type,
+    )
+    return {
+        "id": new_project.id,
+        "name": new_project.name,
+        "description": new_project.description,
+        "owner_username": new_project.owner_username,
+        "input_type": new_project.input_type.value,
+        "output_type": new_project.output_type.value,
+        "created_at": str(new_project.created_at),
+    }
+
+@router.get("/{project_id}", response_model=dict)
+def read_project(project_id: int):
+    project = db.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+@router.put("/{project_id}", response_model=dict)
+def modify_project(project_id: int, updates: ProjectUpdate):
+    updated = db.update_project(
+        id=project_id,
+        new_name=updates.name,
+        new_description=updates.description,
+        new_owner_username=updates.owner_username,
+        new_input_type=updates.input_type,
+        new_output_type=updates.output_type,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {
+        "id": updated.id,
+        "name": updated.name,
+        "description": updated.description,
+        "owner_username": updated.owner_username,
+        "input_type": updated.input_type.value,
+        "output_type": updated.output_type.value,
+        "created_at": str(updated.created_at),
+    }
+
+@router.delete("/{project_id}", response_model=dict)
+def remove_project(project_id: int):
+    deleted = db.delete_project(project_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"detail": "Project deleted successfully"}
+
+@router.get("/", response_model=list[dict])
+def list_projects():
+    return db.get_all_projects()
+
 ##################
 @app.get("/")
 def root():
@@ -78,3 +161,5 @@ def root():
 @app.get("/health")
 def health():
     return JSONResponse(content={"status": "ok"}, status_code=200)
+
+app.include_router(router)

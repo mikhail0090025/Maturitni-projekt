@@ -32,25 +32,8 @@ class Project(Base):
     name = Column(String(100), nullable=False)
     description = Column(String(255), default="")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
     owner_username = Column(String(50), ForeignKey("users.username"), nullable=False)
-
-    owner = relationship("User", back_populates="projects")
-
-    fixed_properties = relationship(
-        "ProjectFixedProperties",
-        uselist=False,
-        back_populates="project",
-        cascade="all, delete-orphan"
-    )
-
-
-class ProjectFixedProperties(Base):
-    __tablename__ = "project_fixed_properties"
-
-    id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     input_type = Column(EnumType(DataType), nullable=False)
     output_type = Column(EnumType(DataType), nullable=False)
-
-    project = relationship("Project", back_populates="fixed_properties")
+    
+    owner = relationship("User", back_populates="projects")
