@@ -182,3 +182,20 @@ def data_type_to_index(data_type: str):
     if index is None:
         return JSONResponse(content={"error": "Data type not found"}, status_code=404)
     return JSONResponse(content={"index": index}, status_code=200)
+
+@app.get("/my_projects")
+def get_my_projects(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = response_to_user.json()
+    username = user_data['username']
+    projects_response = requests.get(f'http://projects_manager:8003/user/{username}')
+    if projects_response.status_code >= 400:
+        return JSONResponse(content={'error': f'Couldnt get projects of user {username}'})
+    data = projects_response.json()
+    
+    return data

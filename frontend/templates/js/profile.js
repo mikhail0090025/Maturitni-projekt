@@ -17,3 +17,11 @@ document.getElementById("logout_button").addEventListener("click", async () => {
 document.getElementById("settings_button").addEventListener("click", async () => {
     window.location.href = "/settings_page";
 });
+
+/*
+fetch("/my_projects", {
+    method: "GET",
+    credentials: "include"
+}).then(response => response.json()).then(data => {
+    console.log(data);
+}).catch(error => console.error(error));*/
