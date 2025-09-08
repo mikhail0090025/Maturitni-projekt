@@ -61,8 +61,23 @@ def profile_page_endpoint_get(request: Request):
     if response_to_user.status_code >= 400:
         return RedirectResponse(url="/login_page")
     user_data = response_to_user.json()
-    print("User data:", user_data)
     return templates.TemplateResponse("settings.html", {"request": request, "bio": user_data["bio"], "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "born_date": user_data["born_date"]})
+
+@app.get("/new_project_page")
+def profile_page_endpoint_get(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = response_to_user.json()
+
+    available_data_types = requests.get("http://db_service:8002/enums/datatypes").json()
+    print(available_data_types)
+    if not available_data_types:
+        return JSONResponse(content={"error": "No data types available"}, status_code=500)
+    return templates.TemplateResponse("new_project.html", {"request": request, "available_data_types": available_data_types, "bio": user_data["bio"], "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "born_date": user_data["born_date"]})
 
 ''' User service endpoints '''
 
@@ -143,3 +158,27 @@ async def logout_user(request: Request):
     resp = JSONResponse(content=response.json(), status_code=response.status_code)
     resp.delete_cookie("session_id", path="/")
     return resp
+
+''' Projects manager endpoints '''
+
+@app.post("/new_project")
+async def new_project(request: Request):
+    data = await request.json()
+    print("Data:", data)
+    required_fields = ["name", "owner_username", "input_type", "output_type"]
+    if not all(field in data for field in required_fields):
+        return JSONResponse(content={"error": "Missing required fields"}, status_code=400)
+
+    response = requests.post("http://projects_manager:8003/", json=data)
+    return JSONResponse(content=response.json(), status_code=response.status_code)
+
+@app.get("/data_type_to_index/{data_type}")
+def data_type_to_index(data_type: str):
+    print("Data type:", data_type)
+    request = requests.get(f"http://projects_manager:8003/data_type_to_index/{data_type}")
+    if request.status_code >= 400:
+        return JSONResponse(content={"error": "Failed to fetch data type index"}, status_code=500)
+    index = request.json().get("index")
+    if index is None:
+        return JSONResponse(content={"error": "Data type not found"}, status_code=404)
+    return JSONResponse(content={"index": index}, status_code=200)

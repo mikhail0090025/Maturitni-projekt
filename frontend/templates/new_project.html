@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+    <h3>New project</h3>
+    <a href="/profile_page">
+        <button class="btn btn-outline-primary">Back</button>
+    </a>
+    <div>
+        <input type="hidden" id="owner_username" value="{{ username }}">
+        <div>
+            <label for="project_name">Project name</label>
+            <input type="text" id="project_name" name="project_name" value="New Project">
+        </div>
+        <div>
+            <label for="project_description">Project description</label>
+            <textarea id="project_description" name="project_description" rows="5" cols="20">Lorem ipsum dolor sit amet consectetur adipisicing elit. </textarea>
+        </div>
+        <div>
+            <label for="input_type">Input type</label>
+            <select name="input_type" id="input_type">
+                {% for dt in available_data_types %}
+                    <option value="{{ dt }}">{{ dt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="output_type">Output type</label>
+            <select name="output_type" id="output_type">
+                {% for dt in available_data_types %}
+                    <option value="{{ dt }}">{{ dt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button id="create_project_button" class="btn btn-success">Create project</button>
+    </div>
+    <script src="/js/new_project.js"></script>
+{% endblock %}

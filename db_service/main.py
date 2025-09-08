@@ -75,7 +75,7 @@ def list_users():
 
 ''' CRUD endpoints for projects '''
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+projects_router = APIRouter(prefix="/projects", tags=["projects"])
 
 # --- Schemas ---
 class ProjectCreate(BaseModel):
@@ -94,7 +94,7 @@ class ProjectUpdate(BaseModel):
 
 
 # --- Endpoints ---
-@router.post("/", response_model=dict)
+@projects_router.post("/", response_model=dict)
 def create_project(project: ProjectCreate):
     new_project = db.insert_project(
         name=project.name,
@@ -113,14 +113,14 @@ def create_project(project: ProjectCreate):
         "created_at": str(new_project.created_at),
     }
 
-@router.get("/{project_id}", response_model=dict)
+@projects_router.get("/{project_id}", response_model=dict)
 def read_project(project_id: int):
     project = db.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
-@router.put("/{project_id}", response_model=dict)
+@projects_router.put("/{project_id}", response_model=dict)
 def modify_project(project_id: int, updates: ProjectUpdate):
     updated = db.update_project(
         id=project_id,
@@ -142,16 +142,26 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         "created_at": str(updated.created_at),
     }
 
-@router.delete("/{project_id}", response_model=dict)
+@projects_router.delete("/{project_id}", response_model=dict)
 def remove_project(project_id: int):
     deleted = db.delete_project(project_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Project not found")
     return {"detail": "Project deleted successfully"}
 
-@router.get("/", response_model=list[dict])
+@projects_router.get("/")
 def list_projects():
-    return db.get_all_projects()
+    all_projects = db.get_all_projects()
+    print(all_projects)
+    return JSONResponse(content=all_projects, status_code=200)
+
+''' OTHER '''
+
+enum_router = APIRouter(prefix="/enums", tags=["enums"])
+
+@enum_router.get("/datatypes")
+def list_data_types():
+    return [dt.value for dt in DataType]
 
 ##################
 @app.get("/")
@@ -162,4 +172,5 @@ def root():
 def health():
     return JSONResponse(content={"status": "ok"}, status_code=200)
 
-app.include_router(router)
+app.include_router(projects_router)
+app.include_router(enum_router)

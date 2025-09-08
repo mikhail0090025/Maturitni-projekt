@@ -8,8 +8,8 @@ Base = declarative_base()
 class DataType(Enum):
     NOISE = "noise"
     IMAGE = "image"
-    NUMBERS = "numbers"
-
+    VECTOR = "vector"
+    BINARY = "binary"
 
 class User(Base):
     __tablename__ = "users"
@@ -35,5 +35,5 @@ class Project(Base):
     owner_username = Column(String(50), ForeignKey("users.username"), nullable=False)
     input_type = Column(EnumType(DataType), nullable=False)
     output_type = Column(EnumType(DataType), nullable=False)
-    
+
     owner = relationship("User", back_populates="projects")

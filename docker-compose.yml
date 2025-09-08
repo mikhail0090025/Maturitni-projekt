@@ -4,8 +4,8 @@ services:
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 2s
+      interval: 5s
+      timeout: 3s
       retries: 5
     restart: on-failure
     volumes:
@@ -83,6 +83,21 @@ services:
     volumes:
       - ./db_service/alembic/versions:/app/alembic/versions
 
+  projects_manager:
+    build: ./projects_manager
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./projects_manager/projects:/app/projects
+
 volumes:
   redis-data:
-#   pgadmin-data:

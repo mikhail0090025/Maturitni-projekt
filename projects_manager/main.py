@@ -1,0 +1,92 @@
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel
+import json
+import requests
+from typing import Optional, List
+from data import IndexToDataType, DataTypeToIndex
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return JSONResponse(content={"message": "Projects service is up!"}, status_code=200)
+
+@app.get("/health")
+def health():
+    return JSONResponse(content={"status": "ok"}, status_code=200)
+
+# --- Schemas ---
+class ProjectCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    owner_username: str
+    input_type: str
+    output_type: str
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    owner_username: Optional[str] = None
+    input_type: Optional[str] = None
+    output_type: Optional[str] = None
+
+
+# --- Endpoints ---
+@app.post("/", response_model=dict)
+def create_project(project: ProjectCreate):
+    request_ = requests.post("http://db_service:8002/projects/", json=project.dict())
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to create project"}, status_code=500)
+    return request_.json()
+
+@app.get("/{project_id}", response_model=dict)
+def read_project(project_id: int):
+    request_ = requests.get(f"http://db_service:8002/projects/{project_id}")
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch project"}, status_code=500)
+    return request_.json()
+
+@app.put("/{project_id}", response_model=dict)
+def modify_project(project_id: int, updates: ProjectUpdate):
+    request_ = requests.put(f"http://db_service:8002/projects/{project_id}", json=updates.dict(exclude_unset=True))
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to update project"}, status_code=500)
+    return request_.json()
+
+@app.delete("/{project_id}", response_model=dict)
+def remove_project(project_id: int):
+    request_ = requests.delete(f"http://db_service:8002/projects/{project_id}")
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to delete project"}, status_code=500)
+    return request_.json()
+
+@app.get("/projects/list")
+# @app.get("/list_projects", response_model=list[dict])
+def list_projects():
+    request_ = requests.get("http://db_service:8002/projects/")
+    print(request_.json())
+    print(request_.status_code)
+    print(request_)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch projects"}, status_code=500)
+    return request_.json()
+
+''' OTHER ENDPOINTS '''
+
+@app.get("/data_type_to_index/{data_type}")
+def data_type_to_index(data_type: str):
+    print("Data type:", data_type)
+    try:
+        index = DataTypeToIndex(data_type)
+        return JSONResponse(content={"index": index}, status_code=200)
+    except ValueError as ve:
+        return JSONResponse(content={"error": str(ve)}, status_code=400)
+    except Exception as e:
+        return JSONResponse(content={"error": "Failed to fetch data type index"}, status_code=500)
