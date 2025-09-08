@@ -148,6 +148,20 @@ def delete_project(id):
         session.commit()
         return True
 
+def get_projects_of_user(owner_username: str):
+    with SessionLocal() as session:
+        projects = session.query(models.Project).filter_by(owner_username=owner_username).all()
+        return [
+            {
+                "name": p.name,
+                "description": p.description,
+                "owner_username": p.owner_username,
+                "input_type": p.input_type.value,
+                "output_type": p.output_type.value,
+                "created_at": str(p.created_at)
+            } for p in projects
+        ]
+
 def get_all_projects():
     with SessionLocal() as session:
         projects = session.query(models.Project).all()

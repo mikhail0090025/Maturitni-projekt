@@ -149,6 +149,11 @@ def remove_project(project_id: int):
         raise HTTPException(status_code=404, detail="Project not found")
     return {"detail": "Project deleted successfully"}
 
+@projects_router.get("/user/{owner_username}", response_model=List[dict])
+def list_user_projects(owner_username: str):
+    projects = db.get_projects_of_user(owner_username)
+    return projects
+
 @projects_router.get("/")
 def list_projects():
     all_projects = db.get_all_projects()

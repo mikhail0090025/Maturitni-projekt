@@ -67,6 +67,13 @@ def remove_project(project_id: int):
         return JSONResponse(content={"detail": "Failed to delete project"}, status_code=500)
     return request_.json()
 
+@app.get("/user/{owner_username}", response_model=List[dict])
+def list_user_projects(owner_username: str):
+    request_ = requests.get(f"http://db_service:8002/projects/user/{owner_username}")
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch user's projects"}, status_code=500)
+    return request_.json()
+
 @app.get("/projects/list")
 # @app.get("/list_projects", response_model=list[dict])
 def list_projects():
