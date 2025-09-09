@@ -108,6 +108,7 @@ def get_project(id):
         project = session.query(models.Project).filter_by(id=id).first()
         if project:
             return {
+                "id": project.id,
                 "name": project.name,
                 "description": project.description,
                 "owner_username": project.owner_username,
@@ -153,6 +154,7 @@ def get_projects_of_user(owner_username: str):
         projects = session.query(models.Project).filter_by(owner_username=owner_username).all()
         return [
             {
+                "id": p.id,
                 "name": p.name,
                 "description": p.description,
                 "owner_username": p.owner_username,
@@ -167,6 +169,7 @@ def get_all_projects():
         projects = session.query(models.Project).all()
         return [
             {
+                "id": p.id,
                 "name": p.name,
                 "description": p.description,
                 "owner_username": p.owner_username,

@@ -31,7 +31,7 @@ const MyProjects = () => {
             {projects.map((p, i) => (
                 <a
                     key={i}
-                    href={`/projects/${p.name}`}
+                    href={`/projects/${p.id}`}
                     style={{
                         padding: "6px 10px",
                         borderRadius: "6px",
