@@ -1,11 +1,12 @@
 fastapi
 uvicorn[standard]
-psycopg2-binary
-sqlalchemy
-alembic
-python-dotenv
 requests
-bcrypt
-pytest
-pydantic
 jinja2
+bcrypt
+
+# psycopg2-binary
+# sqlalchemy
+# alembic
+# python-dotenv
+# pytest
+# pydantic

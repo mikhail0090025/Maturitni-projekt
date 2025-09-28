@@ -2,8 +2,9 @@ fastapi
 uvicorn[standard]
 psycopg2-binary
 sqlalchemy
-alembic
-python-dotenv
-requests
-bcrypt
 pydantic
+alembic
+
+# python-dotenv
+# requests
+# bcrypt

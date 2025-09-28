@@ -1,11 +1,12 @@
 fastapi
 uvicorn[standard]
 psycopg2-binary
-sqlalchemy
-alembic
-python-dotenv
 requests
 bcrypt
-pytest
-pydantic
 redis
+
+# python-dotenv
+# alembic
+# sqlalchemy
+# pytest
+# pydantic
