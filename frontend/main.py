@@ -199,3 +199,23 @@ def get_my_projects(request: Request):
     data = projects_response.json()
     
     return data
+
+@app.get("/projects/{project_id}")
+def get_project(project_id: int, request: Request):
+    project_response = requests.get(f'http://projects_manager:8003/{project_id}')
+    if project_response.status_code >= 400:
+        return JSONResponse(content={'error': f'Couldnt get project with id {project_id}'})
+    user_response = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    print(user_response.status_code)
+    print(user_response.json())
+    if user_response.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = user_response.json()
+    if user_data['username'] != project_response.json().get('owner_username'):
+        return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "You are not the owner of this project!"})
+    data = project_response.json()
+
+    return templates.TemplateResponse("project_page.html", {"request": request, "project_data": data})

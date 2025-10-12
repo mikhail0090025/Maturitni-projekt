@@ -86,7 +86,7 @@ footer {
 /**/
 h1, h2, h3, h4, h5, h6 {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(90deg, #2563eb, #9333ea);
+    background: linear-gradient(0deg, #2563eb, #9333ea);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 700;
