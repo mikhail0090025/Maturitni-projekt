@@ -3,21 +3,25 @@
 {% block title %}{{ project_data.name }}{% endblock %}
 
 {% block head %}
-<script src="/styles/editor.css"></script>
-<script src="/js/editor.js"></script>
+<link rel="stylesheet" href="/styles/editor.css">
+
+<!-- React / ReactDOM / Babel (для быстрого прототипа) -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 {% endblock %}
 
 {% block content %}
-    <div class="main-block">
-        <h1>{{ project_data.name }}</h1><br>
-        <h4>{{ project_data.description }}</h4>
-    </div>
-    <div id="editor-block">
-        <div id="add-item-block">
-            <div id="add-layer-block">
-                <button id="add-linear-layer-button" class="btn btn-primary">Add linear layer</button>
-                <button id="add-conv-layer-button" class="btn btn-primary">Add convolution layer</button>
-            </div>
+<div class="main-block">
+    <h1>{{ project_data.name }}</h1><br>
+    <h4>{{ project_data.description }}</h4>
+</div>
+<div id="editor-block">
+    <div id="add-item-block">
+        <div id="add-layer-block">
+            <button id="add-linear-layer-button" class="btn btn-primary">Add linear layer</button>
+            <button id="add-conv-layer-button" class="btn btn-primary">Add convolution layer</button>
+        </div>
             <div id="add-activation-block">
                 <button id="add-relu-button" class="btn btn-primary">Add ReLU</button>
                 <button id="add-leaky-relu-button" class="btn btn-primary">Add LeakyReLU</button>
@@ -34,4 +38,5 @@
         </div>
         <div id="layers-block"></div>
     </div>
+    <script type="text/babel" src="/js/editor.js"></script>
 {% endblock %}

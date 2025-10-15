@@ -1,0 +1,95 @@
+/* editor.css */
+#editor-block {
+  padding: 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+}
+
+/* hint and action row */
+.editor-top .hint {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+.action-row {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+/* Layers list & card */
+.layer-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(15,15,15,0.03);
+}
+
+.layer-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.layer-controls button {
+  margin-left:6px;
+}
+
+.layer-body {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap:6px 10px;
+  align-items:center;
+}
+
+.layer-body label {
+  font-size: 0.9rem;
+  color: #222;
+}
+
+.layer-body input[type="number"], .layer-body input[type="text"] {
+  padding:6px 8px;
+  border: 1px solid #cfcfcf;
+  border-radius:4px;
+  width:100%;
+  box-sizing:border-box;
+}
+
+.btn {
+  cursor:pointer;
+  border: none;
+  border-radius: 4px;
+  padding:6px 10px;
+  font-size:0.9rem;
+}
+
+.btn-sm {
+  padding:4px 8px;
+  font-size:0.8rem;
+}
+
+.btn-primary {
+  background:#007bff; color:#fff;
+}
+
+.btn-danger {
+  background:#dc3545; color:#fff;
+}
+
+.btn-success {
+  background:#28a745; color:#fff;
+}
+
+.empty {
+  color:#666;
+  font-style:italic;
+  padding: 8px 6px;
+}
+
+.small-muted {
+  color:#666;
+  font-size:0.9rem;
+}
