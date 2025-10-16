@@ -16,27 +16,6 @@
     <h1>{{ project_data.name }}</h1><br>
     <h4>{{ project_data.description }}</h4>
 </div>
-<div id="editor-block">
-    <div id="add-item-block">
-        <div id="add-layer-block">
-            <button id="add-linear-layer-button" class="btn btn-primary">Add linear layer</button>
-            <button id="add-conv-layer-button" class="btn btn-primary">Add convolution layer</button>
-        </div>
-            <div id="add-activation-block">
-                <button id="add-relu-button" class="btn btn-primary">Add ReLU</button>
-                <button id="add-leaky-relu-button" class="btn btn-primary">Add LeakyReLU</button>
-                <button id="add-prelu-button" class="btn btn-primary">Add PReLU</button>
-                <button id="add-sigmoid-button" class="btn btn-primary">Add Sigmoid</button>
-                <button id="add-tanh-button" class="btn btn-primary">Add Tanh</button>
-                <button id="add-softmax-button" class="btn btn-primary">Add Softmax</button>
-            </div>
-            <div id="add-normalization-block">
-                <button id="add-batchnorm1d-button" class="btn btn-primary">Add BatchNorm1d</button>
-                <button id="add-batchnorm2d-button" class="btn btn-primary">Add BatchNorm2d</button>
-                <button id="add-layernorm-button" class="btn btn-primary">Add LayerNorm</button>
-            </div>
-        </div>
-        <div id="layers-block"></div>
-    </div>
-    <script type="text/babel" src="/js/editor.js"></script>
+<div id="layers-block"></div>
+<script type="text/babel" src="/js/editor.js"></script>
 {% endblock %}

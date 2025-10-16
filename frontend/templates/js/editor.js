@@ -101,77 +101,65 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
 
 function Editor() {
   const [layers, setLayers] = useState([]);
+  const [activeTab, setActiveTab] = useState("layers"); // 'layers' | 'activations' | 'normalizations'
 
-  // Adding layer by type (used from internal calls or from external buttons)
   const pushLayer = (type) => {
     const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
     setLayers(prev => [...prev, { type, params: template }]);
   };
 
-  // Update / delete / reorder
   const updateLayer = (idx, newLayer) => setLayers(prev => prev.map((l, i) => (i === idx ? newLayer : l)));
   const deleteLayer = (idx) => setLayers(prev => prev.filter((_, i) => i !== idx));
-  const moveUp = (idx) => setLayers(prev => {
-    if (idx <= 0) return prev;
-    const arr = [...prev];
-    [arr[idx-1], arr[idx]] = [arr[idx], arr[idx-1]];
-    return arr;
-  });
-  const moveDown = (idx) => setLayers(prev => {
-    if (idx >= prev.length - 1) return prev;
-    const arr = [...prev];
-    [arr[idx], arr[idx+1]] = [arr[idx+1], arr[idx]];
-    return arr;
-  });
 
-  // Hook: attach DOM click listeners to existing buttons on page (only once)
-  useEffect(() => {
-    const bind = (id, type) => {
-      const el = document.getElementById(id);
-      if (!el) return null;
-      const handler = () => pushLayer(type);
-      el.addEventListener("click", handler);
-      return () => el.removeEventListener("click", handler);
-    };
-
-    const cleaners = [
-      bind("add-linear-layer-button", "Linear"),
-      bind("add-conv-layer-button", "Conv2D"),
-      bind("add-relu-button", "ReLU"),
-      bind("add-leaky-relu-button", "LeakyReLU"),
-      bind("add-prelu-button", "PReLU"),
-      bind("add-sigmoid-button", "Sigmoid"),
-      bind("add-tanh-button", "Tanh"),
-      bind("add-softmax-button", "Softmax"),
-      bind("add-batchnorm1d-button", "BatchNorm1d"),
-      bind("add-batchnorm2d-button", "BatchNorm2d"),
-      bind("add-layernorm-button", "LayerNorm"),
-    ].filter(Boolean);
-
-    return () => cleaners.forEach(c => c && c());
-  }, []); // empty deps → attach once on mount
-
-  // Export JSON — can later send to backend
-  const exportJSON = () => {
-    const json = JSON.stringify(layers, null, 2);
-    console.log("EXPORT MODEL JSON:", json);
-    // Example: POST to backend
-    // fetch('/api/projects/123/layers', { method:'POST', headers: {'Content-Type':'application/json'}, body: json })
-    //   .then(r=>r.json()).then(console.log)
-    alert("Model JSON printed to console (and ready to POST).");
+  // Вкладки слева
+  const tabContent = () => {
+    switch(activeTab) {
+      case "layers":
+        return (
+          <>
+            <button className="btn btn-primary" onClick={() => pushLayer("Linear")}>Add Linear</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Conv2D")}>Add Conv2D</button>
+          </>
+        );
+      case "activations":
+        return (
+          <>
+            <button className="btn btn-primary" onClick={() => pushLayer("ReLU")}>Add ReLU</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("LeakyReLU")}>Add LeakyReLU</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("PReLU")}>Add PReLU</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Sigmoid")}>Add Sigmoid</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Tanh")}>Add Tanh</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Softmax")}>Add Softmax</button>
+          </>
+        );
+      case "normalizations":
+        return (
+          <>
+            <button className="btn btn-primary" onClick={() => pushLayer("BatchNorm1d")}>Add BatchNorm1d</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("BatchNorm2d")}>Add BatchNorm2d</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("LayerNorm")}>Add LayerNorm</button>
+          </>
+        );
+      default: return null;
+    }
   };
 
   return (
-    <div className="editor-root">
-      <div className="editor-top">
-        <p className="hint">Click buttons above to add layers. Edit parameters below.</p>
-        <div className="action-row">
-          <button className="btn btn-success" onClick={exportJSON}>Export JSON</button>
-          <span className="small-muted"> (will print JSON to console)</span>
+    <div className="editor-container">
+      {/* Левая панель вкладок */}
+      <div className="editor-sidebar">
+        <div className="tabs">
+          <button className={activeTab === "layers" ? "active" : ""} onClick={() => setActiveTab("layers")}>Layers</button>
+          <button className={activeTab === "activations" ? "active" : ""} onClick={() => setActiveTab("activations")}>Activations</button>
+          <button className={activeTab === "normalizations" ? "active" : ""} onClick={() => setActiveTab("normalizations")}>Normalizations</button>
+        </div>
+        <div className="tab-content">
+          {tabContent()}
         </div>
       </div>
 
-      <div id="layers-list">
+      {/* Центр — список слоёв */}
+      <div className="editor-main">
         {layers.length === 0 ? <div className="empty">No layers yet — add some.</div> : null}
         {layers.map((layer, idx) => (
           <LayerCard
@@ -181,8 +169,8 @@ function Editor() {
             total={layers.length}
             onUpdate={updateLayer}
             onDelete={deleteLayer}
-            moveUp={moveUp}
-            moveDown={moveDown}
+            moveUp={(i)=> {/*...*/}}
+            moveDown={(i)=> {/*...*/}}
           />
         ))}
       </div>
