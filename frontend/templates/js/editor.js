@@ -111,6 +111,18 @@ function Editor() {
   const updateLayer = (idx, newLayer) => setLayers(prev => prev.map((l, i) => (i === idx ? newLayer : l)));
   const deleteLayer = (idx) => setLayers(prev => prev.filter((_, i) => i !== idx));
 
+  const exportJSON = () => {
+    const json = JSON.stringify(layers, null, 2);
+    console.log("Model JSON:", json);
+    alert("Model JSON printed to console.");
+  };
+
+  const SaveJSON = () => {
+    const json = JSON.stringify(layers, null, 2);
+    console.log("Model JSON:", json);
+    alert("Model JSON printed to console.");
+  };
+
   // Вкладки слева
   const tabContent = () => {
     switch(activeTab) {
@@ -146,6 +158,7 @@ function Editor() {
 
   return (
     <div className="editor-container">
+    <button onClick={() => exportJSON()}>Get JSON</button>
       {/* Левая панель вкладок */}
       <div className="editor-sidebar">
         <div className="tabs">

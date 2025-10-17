@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import Column, Integer, String, Date, DateTime, func, ForeignKey, Enum as EnumType
+from sqlalchemy import Column, Integer, String, Date, DateTime, func, ForeignKey, Enum as EnumType, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -35,5 +35,6 @@ class Project(Base):
     owner_username = Column(String(50), ForeignKey("users.username"), nullable=False)
     input_type = Column(EnumType(DataType), nullable=False)
     output_type = Column(EnumType(DataType), nullable=False)
+    architecture_json = Column(Text(), nullable=True)
 
     owner = relationship("User", back_populates="projects")
