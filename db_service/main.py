@@ -91,6 +91,7 @@ class ProjectUpdate(BaseModel):
     owner_username: Optional[str] = None
     input_type: Optional[DataType] = None
     output_type: Optional[DataType] = None
+    project_json: Optional[str] = None
 
 
 # --- Endpoints ---
@@ -129,6 +130,7 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         new_owner_username=updates.owner_username,
         new_input_type=updates.input_type,
         new_output_type=updates.output_type,
+        new_architecture_json=updates.project_json
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -140,6 +142,7 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         "input_type": updated.input_type.value,
         "output_type": updated.output_type.value,
         "created_at": str(updated.created_at),
+        "project_json": updated.architecture_json
     }
 
 @projects_router.delete("/{project_id}", response_model=dict)

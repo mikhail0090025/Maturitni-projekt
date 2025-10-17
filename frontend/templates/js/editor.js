@@ -115,12 +115,43 @@ function Editor() {
     const json = JSON.stringify(layers, null, 2);
     console.log("Model JSON:", json);
     alert("Model JSON printed to console.");
+    return json;
   };
+
+  const importJSON = (json) => {
+    try {
+      const parsed = JSON.parse(json);
+      setLayers(parsed);
+    } catch (e) {
+      alert("Invalid JSON");
+    }
+  };
+
+  useEffect(() => {
+    // On mount, try to load existing project JSON
+    const existingJson = document.getElementById('project-json').value;
+    if (existingJson) {
+      importJSON(existingJson);
+    }
+  }, []);
 
   const SaveJSON = () => {
     const json = JSON.stringify(layers, null, 2);
     console.log("Model JSON:", json);
     alert("Model JSON printed to console.");
+  };
+  const SaveProject = () => {
+    const json = JSON.stringify(layers, null, 2);
+    fetch('/projects/save/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        project_json: json,
+        project_id: document.getElementById('project-id').value
+      }),
+    })
   };
 
   // Вкладки слева
@@ -159,6 +190,7 @@ function Editor() {
   return (
     <div className="editor-container">
     <button onClick={() => exportJSON()}>Get JSON</button>
+    <button onClick={() => SaveProject()}>Save project</button>
       {/* Левая панель вкладок */}
       <div className="editor-sidebar">
         <div className="tabs">

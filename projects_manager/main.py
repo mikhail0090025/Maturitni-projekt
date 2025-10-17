@@ -30,6 +30,7 @@ class ProjectUpdate(BaseModel):
     owner_username: Optional[str] = None
     input_type: Optional[str] = None
     output_type: Optional[str] = None
+    project_json: Optional[str] = None
 
 
 # --- Endpoints ---

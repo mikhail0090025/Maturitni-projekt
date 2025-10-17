@@ -114,12 +114,13 @@ def get_project(id):
                 "owner_username": project.owner_username,
                 "input_type": project.input_type.value,
                 "output_type": project.output_type.value,
-                "created_at": str(project.created_at)
+                "created_at": str(project.created_at),
+                "project_json": project.architecture_json
             }
         return None
 
 def update_project(id, new_name=None, new_description=None, new_owner_username=None,
-                   new_input_type=None, new_output_type=None):
+                   new_input_type=None, new_output_type=None, new_architecture_json=None):
     with SessionLocal() as session:
         project = session.query(models.Project).filter_by(id=id).first()
         if not project:
@@ -135,6 +136,8 @@ def update_project(id, new_name=None, new_description=None, new_owner_username=N
             project.input_type = new_input_type
         if new_output_type is not None:
             project.output_type = new_output_type
+        if new_architecture_json is not None:
+            project.architecture_json = new_architecture_json
 
         session.commit()
         session.refresh(project)
@@ -160,7 +163,8 @@ def get_projects_of_user(owner_username: str):
                 "owner_username": p.owner_username,
                 "input_type": p.input_type.value,
                 "output_type": p.output_type.value,
-                "created_at": str(p.created_at)
+                "created_at": str(p.created_at),
+                "project_json": p.architecture_json
             } for p in projects
         ]
 
@@ -175,6 +179,7 @@ def get_all_projects():
                 "owner_username": p.owner_username,
                 "input_type": p.input_type.value,
                 "output_type": p.output_type.value,
-                "created_at": str(p.created_at)
+                "created_at": str(p.created_at),
+                "project_json": p.architecture_json
             } for p in projects
         ]
