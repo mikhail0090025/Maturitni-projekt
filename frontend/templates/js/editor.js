@@ -103,12 +103,71 @@ function Editor() {
   const [layers, setLayers] = useState([]);
   const [activeTab, setActiveTab] = useState("layers"); // 'layers' | 'activations' | 'normalizations'
 
+  /*
   const pushLayer = (type) => {
     const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
     setLayers(prev => [...prev, { type, params: template }]);
+    };
+  
+  const updateLayer = (idx, newLayer) => setLayers(prev => prev.map((l, i) => (i === idx ? newLayer : l)));
+  */
+  const pushLayer = (type) => {
+    const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
+    
+    // Автоматическая коррекция входов
+    setLayers(prev => {
+      const newLayer = { type, params: template };
+
+      if (prev.length > 0) {
+        const lastLayer = prev[prev.length - 1];
+
+        // Если оба Linear, синхронизируем in_features
+        if (type === "Linear" && lastLayer.type === "Linear") {
+          newLayer.params.in_features = lastLayer.params.out_features;
+        }
+
+        // Если оба Conv2D, синхронизируем in_channels
+        if (type === "Conv2D" && lastLayer.type === "Conv2D") {
+          newLayer.params.in_channels = lastLayer.params.out_channels;
+        }
+      }
+
+      return [...prev, newLayer];
+    });
   };
 
-  const updateLayer = (idx, newLayer) => setLayers(prev => prev.map((l, i) => (i === idx ? newLayer : l)));
+  const updateLayer = (idx, newLayer) => {
+    setLayers(prev => {
+      const updated = prev.map((l, i) => (i === idx ? newLayer : l));
+
+      // Авто-связка с предыдущим слоем
+      if (idx > 0) {
+        const prevLayer = updated[idx - 1];
+
+        if (newLayer.type === "Linear" && prevLayer.type === "Linear") {
+          newLayer.params.in_features = prevLayer.params.out_features;
+        }
+
+        if (newLayer.type === "Conv2D" && prevLayer.type === "Conv2D") {
+          newLayer.params.in_channels = prevLayer.params.out_channels;
+        }
+      }
+
+      // Авто-связка с последующим слоем (если он Linear/Conv2D)
+      if (idx < updated.length - 1) {
+        const nextLayer = updated[idx + 1];
+        if (nextLayer.type === "Linear" && newLayer.type === "Linear") {
+          nextLayer.params.in_features = newLayer.params.out_features;
+        }
+        if (nextLayer.type === "Conv2D" && newLayer.type === "Conv2D") {
+          nextLayer.params.in_channels = newLayer.params.out_channels;
+        }
+      }
+
+      return updated;
+    });
+  };
+
   const deleteLayer = (idx) => setLayers(prev => prev.filter((_, i) => i !== idx));
 
   const exportJSON = () => {

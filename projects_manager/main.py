@@ -5,6 +5,8 @@ import json
 import requests
 from typing import Optional, List
 from data import IndexToDataType, DataTypeToIndex
+import neural_net_manager as nn_manager
+import os
 
 app = FastAPI()
 
@@ -31,7 +33,6 @@ class ProjectUpdate(BaseModel):
     input_type: Optional[str] = None
     output_type: Optional[str] = None
     project_json: Optional[str] = None
-
 
 # --- Endpoints ---
 @app.post("/", response_model=dict)
@@ -85,6 +86,30 @@ def list_projects():
     if request_.status_code >= 400:
         return JSONResponse(content={"detail": "Failed to fetch projects"}, status_code=500)
     return request_.json()
+
+''' MODELS ENDPOINTS '''
+@app.post("/create_model/{project_id}")
+def create_model(project_id: int):
+    request_ = requests.get(f"http://db_service:8002/projects/{project_id}")
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch project"}, status_code=500)
+    project = request_.json()
+    model = nn_manager.create_model(project['project_json'])
+    full_model = nn_manager.FullModel(model)
+    print("Creating model for project:", project)
+    full_model.save(os.path.join("projects", f"project_{project_id}_model.pth"))
+    return JSONResponse(content={"detail": "Model creation triggered", "project": project}, status_code=200)
+
+@app.get("/get_model_file/{project_id}")
+def get_model_file(project_id: int):
+    model_path = os.path.join("projects", f"project_{project_id}_model.pth")
+    if not os.path.exists(model_path):
+        return JSONResponse(content={"detail": "Model file not found"}, status_code=404)
+    with open(model_path, "rb") as f:
+        model_data = f.read()
+    return Response(content=model_data, media_type="application/octet-stream")
 
 ''' OTHER ENDPOINTS '''
 
