@@ -142,6 +142,10 @@
   gap: 6px;
 }
 
+.button-save{
+    height: 40px !important;
+}
+
 /* base.css rewriting */
 main {
     flex: 1;

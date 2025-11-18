@@ -248,8 +248,8 @@ function Editor() {
 
   return (
     <div className="editor-container">
-    <button onClick={() => exportJSON()}>Get JSON</button>
-    <button onClick={() => SaveProject()}>Save project</button>
+    <button onClick={() => exportJSON()} className="btn btn-primary button-save">Get JSON</button>
+    <button onClick={() => SaveProject()} className="btn btn-primary button-save">Save project</button>
       {/* Левая панель вкладок */}
       <div className="editor-sidebar">
         <div className="tabs">
