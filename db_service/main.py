@@ -163,6 +163,79 @@ def list_projects():
     print(all_projects)
     return JSONResponse(content=all_projects, status_code=200)
 
+''' CRUD endpoints for datasets '''
+
+datasets_router = APIRouter(prefix="/datasets", tags=["datasets"])
+
+# --- Schemas ---
+class DatasetCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    storage_id: str
+    owner_id: int
+
+class DatasetUpdate(BaseModel):
+    name: str = None
+    description: Optional[str] = None
+    storage_id: str = None
+    owner_id: int = None
+
+# --- Endpoints ---
+@datasets_router.post("/", response_model=dict)
+def create_dataset(dataset: DatasetCreate):
+    new_dataset = db.insert_dataset(
+        name=dataset.name,
+        description=dataset.description,
+        storage_id=dataset.storage_id,
+        owner_id=dataset.owner_id
+    )
+    return {
+        "id": new_dataset.id,
+        "name": new_dataset.name,
+        "description": new_dataset.description,
+        "storage_id": new_dataset.storage_id,
+        "owner_id": new_dataset.owner_id,
+        "created_at": str(new_dataset.created_at),
+    }
+
+@datasets_router.get("/{dataset_id}", response_model=dict)
+def read_dataset(dataset_id: int):
+    dataset = db.get_dataset(dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    return dataset
+
+@datasets_router.put("/{dataset_id}", response_model=dict)
+def modify_dataset(dataset_id: int, updates: DatasetUpdate):
+    updated = db.update_dataset(
+        id=dataset_id,
+        new_name=updates.name,
+        new_description=updates.description,
+        new_storage_id=updates.storage_id,
+        new_owner_id=updates.owner_id
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    return {
+        "id": updated.id,
+        "name": updated.name,
+        "description": updated.description,
+        "storage_id": updated.storage_id,
+        "owner_id": updated.owner_id,
+        "created_at": str(updated.created_at),
+    }
+
+@datasets_router.delete("/{dataset_id}", response_model=dict)
+def remove_dataset(dataset_id: int):
+    deleted = db.delete_dataset(dataset_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    return {"detail": "Dataset deleted successfully"}
+
+@datasets_router.get("/")
+def list_datasets():
+    all_datasets = db.get_all_datasets()
+    return JSONResponse(content=all_datasets, status_code=200)
 ''' OTHER '''
 
 enum_router = APIRouter(prefix="/enums", tags=["enums"])

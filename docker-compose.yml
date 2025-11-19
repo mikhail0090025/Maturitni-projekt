@@ -99,5 +99,21 @@ services:
     volumes:
       - ./projects_manager/projects:/app/projects
 
+  datasets_manager:
+    build: ./datasets_manager
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./datasets_manager/datasets:/app/datasets
+
 volumes:
   redis-data:

@@ -38,3 +38,14 @@ class Project(Base):
     architecture_json = Column(Text(), nullable=True)
 
     owner = relationship("User", back_populates="projects")
+
+class Dataset(Base):
+    __tablename__ = "datasets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(255), default="")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    storage_id = Column(String(128), unique=True, nullable=False)
+
+    owner_id = Column(String(50), ForeignKey("users.id"), nullable=False)
