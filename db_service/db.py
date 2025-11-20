@@ -32,6 +32,7 @@ def get_user(username: str):
         user = session.query(models.User).filter_by(username=username).first()
         if user:
             return {
+                "id": user.id,
                 "name": user.name,
                 "surname": user.surname,
                 "username": user.username,
@@ -79,6 +80,7 @@ def get_all_users():
         users = session.query(models.User).all()
         return [
             {
+                "id": u.id,
                 "name": u.name,
                 "surname": u.surname,
                 "username": u.username,
@@ -182,4 +184,74 @@ def get_all_projects():
                 "created_at": str(p.created_at),
                 "project_json": p.architecture_json
             } for p in projects
+        ]
+
+"""CRUD operations for Dataset model"""
+def insert_dataset(name, description, storage_id, owner_id):
+    with SessionLocal() as session:
+        dataset = models.Dataset(
+            name=name,
+            description=description,
+            storage_id=storage_id,
+            owner_id=owner_id
+        )
+        session.add(dataset)
+        session.commit()
+        session.refresh(dataset)
+        return dataset
+
+def get_dataset(id):
+    with SessionLocal() as session:
+        dataset = session.query(models.Dataset).filter_by(id=id).first()
+        if dataset:
+            return {
+                "id": dataset.id,
+                "name": dataset.name,
+                "description": dataset.description,
+                "storage_id": dataset.storage_id,
+                "owner_id": dataset.owner_id,
+                "created_at": str(dataset.created_at)
+            }
+        return None
+
+def update_dataset(id, new_name=None, new_description=None, new_storage_id=None, new_owner_id=None):
+    with SessionLocal() as session:
+        dataset = session.query(models.Dataset).filter_by(id=id).first()
+        if not dataset:
+            return None
+
+        if new_name is not None:
+            dataset.name = new_name
+        if new_description is not None:
+            dataset.description = new_description
+        if new_storage_id is not None:
+            dataset.storage_id = new_storage_id
+        if new_owner_id is not None:
+            dataset.owner_id = new_owner_id
+
+        session.commit()
+        session.refresh(dataset)
+        return dataset
+
+def delete_dataset(id):
+    with SessionLocal() as session:
+        dataset = session.query(models.Dataset).filter_by(id=id).first()
+        if not dataset:
+            return False
+        session.delete(dataset)
+        session.commit()
+        return True
+
+def get_all_datasets():
+    with SessionLocal() as session:
+        datasets = session.query(models.Dataset).all()
+        return [
+            {
+                "id": d.id,
+                "name": d.name,
+                "description": d.description,
+                "storage_id": d.storage_id,
+                "owner_id": d.owner_id,
+                "created_at": str(d.created_at)
+            } for d in datasets
         ]

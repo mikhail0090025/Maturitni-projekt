@@ -254,4 +254,5 @@ def health():
     return JSONResponse(content={"status": "ok"}, status_code=200)
 
 app.include_router(projects_router)
+app.include_router(datasets_router)
 app.include_router(enum_router)

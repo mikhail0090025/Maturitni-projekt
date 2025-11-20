@@ -1,2 +1,2 @@
-docker-compose exec db_service alembic revision --autogenerate -m "JSON line for project added"
+docker-compose exec db_service alembic revision --autogenerate -m "Dataset FK fixed"
 docker-compose exec db_service alembic upgrade head

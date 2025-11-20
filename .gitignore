@@ -1,3 +1,4 @@
 /postgres/pgdata
 __pycache__/
 *.pyc
+/datasets_manager/datasets

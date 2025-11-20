@@ -48,4 +48,4 @@ class Dataset(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     storage_id = Column(String(128), unique=True, nullable=False)
 
-    owner_id = Column(String(50), ForeignKey("users.id"), nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)

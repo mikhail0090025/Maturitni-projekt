@@ -3,7 +3,10 @@ uvicorn[standard]
 psycopg2-binary
 sqlalchemy
 pydantic
+httpx
+requests
+uuid
+python-multipart
 
 # python-dotenv
-# requests
 # bcrypt
