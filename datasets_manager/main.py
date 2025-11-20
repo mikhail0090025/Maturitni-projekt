@@ -102,7 +102,7 @@ async def upload_zip(file: UploadFile = File(...)):
 
         dataset_type = classify_dataset(tmp_dir)
 
-        user_data_response = requests.get("http://user_service:8001/me")
+        user_data_response = requests.get("http://user_service:8000/me")
         if user_data_response.status_code != 200:
             raise HTTPException(status_code=400, detail=f"Unable to fetch user data {user_data_response.text}")
         user_data = user_data_response.json()

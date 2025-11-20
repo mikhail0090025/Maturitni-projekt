@@ -262,3 +262,13 @@ async def get_current_user(request: Request):
 
     user_res.pop("password_hash", None)
     return JSONResponse(content=user_res, status_code=200)
+
+''' DEBUG '''
+
+@app.get("/session_id")
+async def get_current_user(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return JSONResponse(content={"error": "Not authenticated"}, status_code=401)
+
+    return JSONResponse(content={"session_id": session_id}, status_code=200)
