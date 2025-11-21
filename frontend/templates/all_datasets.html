@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}All Datasets{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+<h1>All Datasets</h1>
+<!--
+[{'id': 2, 'name': 'string', 'description': '', 'storage_id': 'string', 'owner_id': 1, 'created_at': '2025-11-19 18:13:49.710317+00:00'}]
+-->
+<a href="/new_dataset_page"><button type="button" class="btn btn-primary">New Dataset</button></a>
+{% if datasets %}
+    <ul>
+    {% for dataset in datasets %}
+        <li>
+            <strong>{{ dataset.name }}</strong><br>
+            Storage ID: {{ dataset.storage_id }}<br>
+            Owner : {{ name }}, {{ surname }} (<i>{{ username }}</i>)<br>
+            Created At: {{ dataset.created_at }}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No datasets available.</p>
+{% endif %}
+{% endblock %}

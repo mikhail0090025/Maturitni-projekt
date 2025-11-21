@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, APIRouter, UploadFile, File, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter, UploadFile, File, HTTPException, Form, Request
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.responses import JSONResponse
@@ -11,6 +11,7 @@ import zipfile
 import shutil
 import tempfile
 import requests
+import secrets
 
 app = FastAPI(title="Datasets Manager Service")
 
@@ -25,7 +26,7 @@ DB_SERVICE_URL = "http://db_service:8002/datasets"
 class DatasetCreate(BaseModel):
     name: str
     description: Optional[str] = ""
-    storage_id: str
+    storage_id: str = secrets.token_hex(64)
     owner_id: int
 
 class DatasetUpdate(BaseModel):
@@ -80,42 +81,60 @@ async def remove_dataset(dataset_id: int):
         return {"detail": "Dataset deleted successfully"}
 
 @upload_router.post("/zip")
-async def upload_zip(file: UploadFile = File(...)):
+async def upload_zip(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    description: str = Form(""),
+    request: Request = None
+    ):
+    print(f"Received upload request for file: {file.filename}")
     # 1. Format check
     if file.content_type not in ["application/zip", "application/x-zip-compressed"]:
         raise HTTPException(status_code=400, detail="File must be a ZIP archive")
 
+    print("File format verified as ZIP")
     # 2. storage_id
     dataset_id = str(uuid.uuid4())
     save_path = os.path.join(DATASETS_DIR, f"{dataset_id}.zip")
 
+    print(f"Generated dataset ID: {dataset_id}, saving to {save_path}")
     # 3. сохраняем ZIP как есть
     with open(save_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     tmp_dir = tempfile.mkdtemp()
+    print(f"Created temporary directory at {tmp_dir} for extraction")
 
     try:
+        print("Extracting ZIP contents...")
         # Extract
         with zipfile.ZipFile(save_path, 'r') as z:
             z.extractall(tmp_dir)
 
+        print("Classifying dataset...")
+
         dataset_type = classify_dataset(tmp_dir)
 
-        user_data_response = requests.get("http://user_service:8000/me")
+        print(f"Dataset classified as type: {dataset_type}")
+
+        user_data_response = requests.get("http://user_service:8000/me", cookies=request.cookies)
         if user_data_response.status_code != 200:
             raise HTTPException(status_code=400, detail=f"Unable to fetch user data {user_data_response.text}")
         user_data = user_data_response.json()
         user_id = user_data["id"]
 
+        print(f"Fetched user ID: {user_id}")
+
         response = requests.post("http://localhost:8004/datasets/", json={
-            "name": file.filename,
-            "description": f"Uploaded dataset {file.filename}",
+            "name": name,
+            "description": description,
             "storage_id": dataset_id,
             "owner_id": user_id
         })
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail=f"Unable to create dataset record in DB {response.text}")
+        
+        print("Dataset record created in DB")
 
         dataset_record = response.json()
         print("Created dataset record:", dataset_record)
@@ -129,9 +148,11 @@ async def upload_zip(file: UploadFile = File(...)):
         }
     
     except zipfile.BadZipFile:
+        print("Uploaded file is not a valid ZIP archive")
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid ZIP archive")
     
     except Exception as e:
+        print(f"Internal server error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
     finally:

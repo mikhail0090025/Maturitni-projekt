@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import FastAPI, Request, Response, HTTPException, UploadFile, File, APIRouter, Form
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import bcrypt
@@ -7,6 +7,8 @@ import secrets
 import uuid
 import json
 import requests
+import os
+import httpx
 
 app = FastAPI()
 
@@ -78,6 +80,39 @@ def profile_page_endpoint_get(request: Request):
     if not available_data_types:
         return JSONResponse(content={"error": "No data types available"}, status_code=500)
     return templates.TemplateResponse("new_project.html", {"request": request, "available_data_types": available_data_types, "bio": user_data["bio"], "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "born_date": user_data["born_date"]})
+
+@app.get("/all_datasets_page")
+def all_datasets_page(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = response_to_user.json()
+
+    datasets_response = requests.get("http://db_service:8002/datasets")
+    if datasets_response.status_code >= 400:
+        return JSONResponse(content={"error": "Failed to fetch datasets"}, status_code=500)
+    datasets = datasets_response.json()
+    print("Datasets:")
+    print(datasets)
+    from datetime import datetime
+    for dataset in datasets:
+        dataset['created_at'] = datetime.fromisoformat(dataset['created_at']).strftime('%Y-%m-%d %H:%M:%S')
+
+    return templates.TemplateResponse("all_datasets.html", {"request": request, "datasets": datasets, "bio": user_data["bio"], "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "born_date": user_data["born_date"]})
+
+@app.get("/new_dataset_page")
+def new_dataset_page(request: Request):
+    response_to_user = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if response_to_user.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = response_to_user.json()
+    return templates.TemplateResponse("new_dataset.html", {"request": request, "bio": user_data["bio"], "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "born_date": user_data["born_date"]})
 
 ''' User service endpoints '''
 
@@ -257,3 +292,79 @@ async def update_project(request: Request):
         return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "Failed to save project data!"})
 
     return JSONResponse(content={"detail": "Project saved successfully"}, status_code=200)
+
+''' Datasets manager endpoints '''
+
+DATA_MANAGER_URL = "http://datasets_manager:8004"
+
+dataset_router = APIRouter(prefix="/datasets", tags=["datasets"])
+upload_router = APIRouter(prefix="/upload", tags=["upload"])
+
+# --- Proxy Endpoints для Datasets ---
+
+@dataset_router.post("/")
+async def create_dataset(dataset: dict):
+    async with httpx.AsyncClient() as client:
+        r = await client.post(f"{DATA_MANAGER_URL}/datasets/", json=dataset)
+        if r.status_code != 200:
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        return r.json()
+
+@dataset_router.get("/")
+async def list_datasets():
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{DATA_MANAGER_URL}/datasets/")
+        return JSONResponse(content=r.json(), status_code=r.status_code)
+
+@dataset_router.get("/{dataset_id}")
+async def read_dataset(dataset_id: int):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{DATA_MANAGER_URL}/datasets/{dataset_id}")
+        if r.status_code == 404:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        return r.json()
+
+@dataset_router.put("/{dataset_id}")
+async def modify_dataset(dataset_id: int, updates: dict):
+    async with httpx.AsyncClient() as client:
+        r = await client.put(f"{DATA_MANAGER_URL}/datasets/{dataset_id}", json=updates)
+        if r.status_code == 404:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        return r.json()
+
+@dataset_router.delete("/{dataset_id}")
+async def remove_dataset(dataset_id: int):
+    async with httpx.AsyncClient() as client:
+        r = await client.delete(f"{DATA_MANAGER_URL}/datasets/{dataset_id}")
+        if r.status_code == 404:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        return {"detail": "Dataset deleted successfully"}
+
+
+# --- Proxy Endpoints для Upload ---
+
+@upload_router.post("/zip")
+async def upload_zip(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    description: str = Form(""),
+    request: Request = None
+    ):
+    tmp_file_path = f"/tmp/{uuid.uuid4()}_{file.filename}"
+    with open(tmp_file_path, "wb") as f:
+        f.write(await file.read())
+
+    try:
+        files = {"file": open(tmp_file_path, "rb")}
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            r = await client.post(f"{DATA_MANAGER_URL}/upload/zip", files=files, data={"name": name, "description": description}, timeout=300.0, cookies=request.cookies)
+        return JSONResponse(content=r.json(), status_code=r.status_code)
+    finally:
+        os.remove(tmp_file_path)
+
+@app.get("/health", tags=["health"])
+async def health_check():
+    return JSONResponse(content={"status": "ok"}, status_code=200)
+
+app.include_router(dataset_router)
+app.include_router(upload_router)

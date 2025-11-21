@@ -3,6 +3,8 @@ uvicorn[standard]
 requests
 jinja2
 bcrypt
+httpx
+python-multipart
 
 # psycopg2-binary
 # sqlalchemy
