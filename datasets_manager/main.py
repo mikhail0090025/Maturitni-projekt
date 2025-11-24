@@ -82,10 +82,10 @@ async def remove_dataset(dataset_id: int):
 
 @upload_router.post("/zip")
 async def upload_zip(
-    file: UploadFile = File(...),
-    name: str = Form(...),
-    description: str = Form(""),
-    request: Request = None
+        file: UploadFile = File(...),
+        name: str = Form(...),
+        description: str = Form(""),
+        request: Request = None
     ):
     print(f"Received upload request for file: {file.filename}")
     # 1. Format check

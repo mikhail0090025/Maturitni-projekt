@@ -345,22 +345,30 @@ async def remove_dataset(dataset_id: int):
 
 @upload_router.post("/zip")
 async def upload_zip(
-    file: UploadFile = File(...),
-    name: str = Form(...),
-    description: str = Form(""),
-    request: Request = None
+        file: UploadFile = File(...),
+        name: str = Form(...),
+        description: str = Form(""),
+        request: Request = None
     ):
-    tmp_file_path = f"/tmp/{uuid.uuid4()}_{file.filename}"
-    with open(tmp_file_path, "wb") as f:
-        f.write(await file.read())
+    print("Received upload request for file:", file)
+    print("Name:", name, "Description:", description)
 
-    try:
-        files = {"file": open(tmp_file_path, "rb")}
-        async with httpx.AsyncClient(timeout=300.0) as client:
-            r = await client.post(f"{DATA_MANAGER_URL}/upload/zip", files=files, data={"name": name, "description": description}, timeout=300.0, cookies=request.cookies)
-        return JSONResponse(content=r.json(), status_code=r.status_code)
-    finally:
-        os.remove(tmp_file_path)
+    files = {
+        "file": (file.filename, file.file, file.content_type)
+    }
+
+    url = f"{DATA_MANAGER_URL}/upload/zip"
+    print(f"Forwarding upload to {url}")
+
+    async with httpx.AsyncClient(timeout=300.0) as client:
+        r = await client.post(
+            url,
+            files=files,
+            data={"name": name, "description": description},
+            cookies=request.cookies
+        )
+
+    return JSONResponse(content=r.json(), status_code=r.status_code)
 
 @app.get("/health", tags=["health"])
 async def health_check():
