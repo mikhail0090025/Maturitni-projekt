@@ -187,13 +187,14 @@ def get_all_projects():
         ]
 
 """CRUD operations for Dataset model"""
-def insert_dataset(name, description, storage_id, owner_id):
+def insert_dataset(name, description, storage_id, owner_id, dataset_type):
     with SessionLocal() as session:
         dataset = models.Dataset(
             name=name,
             description=description,
             storage_id=storage_id,
-            owner_id=owner_id
+            owner_id=owner_id,
+            dataset_type=dataset_type
         )
         session.add(dataset)
         session.commit()
@@ -210,11 +211,12 @@ def get_dataset(id):
                 "description": dataset.description,
                 "storage_id": dataset.storage_id,
                 "owner_id": dataset.owner_id,
-                "created_at": str(dataset.created_at)
+                "created_at": str(dataset.created_at),
+                "dataset_type": dataset.dataset_type
             }
         return None
 
-def update_dataset(id, new_name=None, new_description=None, new_storage_id=None, new_owner_id=None):
+def update_dataset(id, new_name=None, new_description=None, new_storage_id=None, new_owner_id=None, new_dataset_type=None):
     with SessionLocal() as session:
         dataset = session.query(models.Dataset).filter_by(id=id).first()
         if not dataset:
@@ -228,6 +230,8 @@ def update_dataset(id, new_name=None, new_description=None, new_storage_id=None,
             dataset.storage_id = new_storage_id
         if new_owner_id is not None:
             dataset.owner_id = new_owner_id
+        if new_dataset_type is not None:
+            dataset.dataset_type = new_dataset_type
 
         session.commit()
         session.refresh(dataset)
@@ -252,6 +256,7 @@ def get_all_datasets():
                 "description": d.description,
                 "storage_id": d.storage_id,
                 "owner_id": d.owner_id,
-                "created_at": str(d.created_at)
+                "created_at": str(d.created_at),
+                "dataset_type": d.dataset_type
             } for d in datasets
         ]

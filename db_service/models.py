@@ -47,5 +47,6 @@ class Dataset(Base):
     description = Column(String(255), default="")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     storage_id = Column(String(128), unique=True, nullable=False)
+    dataset_type = Column(String(50), nullable=False, default="unknown")
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)

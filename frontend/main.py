@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Response, HTTPException, UploadFile, File, APIRouter, Form
-from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import bcrypt
@@ -97,6 +97,13 @@ def all_datasets_page(request: Request):
     datasets = datasets_response.json()
     print("Datasets:")
     print(datasets)
+    for dataset in datasets:
+        dataset_type_info = requests.get(f"http://datasets_manager:8004/datasets/dataset_type_name/{dataset['dataset_type']}")
+        if dataset_type_info.status_code == 200:
+            dataset['dataset_type_description'] = dataset_type_info.json().get('description', 'No description available')
+        else:
+            dataset['dataset_type_description'] = 'No description available'
+
     from datetime import datetime
     for dataset in datasets:
         dataset['created_at'] = datetime.fromisoformat(dataset['created_at']).strftime('%Y-%m-%d %H:%M:%S')
@@ -340,6 +347,38 @@ async def remove_dataset(dataset_id: int):
             raise HTTPException(status_code=404, detail="Dataset not found")
         return {"detail": "Dataset deleted successfully"}
 
+@dataset_router.delete("/by_storage/{storage_id}")
+def proxy_delete_dataset(storage_id: str, request: Request):
+    print(f"[FRONTEND DELETE] Request to delete dataset with StorageID: {storage_id}")
+    cookies = request.cookies
+
+    resp = requests.delete(
+        f"http://datasets_manager:8004/datasets/by_storage/{storage_id}",
+        cookies=cookies
+    )
+
+    return Response(
+        content=resp.content,
+        status_code=resp.status_code,
+        media_type=resp.headers.get("Content-Type", "application/json"),
+    )
+
+@dataset_router.get("/download/{storage_id}")
+def proxy_download(storage_id: str, request: Request):
+    resp = requests.get(
+        f"http://datasets_manager:8004/datasets/download/{storage_id}",
+        cookies=request.cookies,
+        stream=True
+    )
+
+    if resp.status_code != 200:
+        return Response(content=resp.content, status_code=resp.status_code)
+
+    return StreamingResponse(
+        resp.raw,
+        media_type=resp.headers["Content-Type"],
+        headers={"Content-Disposition": resp.headers["Content-Disposition"]},
+    )
 
 # --- Proxy Endpoints для Upload ---
 

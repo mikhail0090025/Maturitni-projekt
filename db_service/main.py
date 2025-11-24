@@ -173,12 +173,14 @@ class DatasetCreate(BaseModel):
     description: Optional[str] = ""
     storage_id: str
     owner_id: int
+    dataset_type: str
 
 class DatasetUpdate(BaseModel):
     name: str = None
     description: Optional[str] = None
     storage_id: str = None
     owner_id: int = None
+    dataset_type: str = None
 
 # --- Endpoints ---
 @datasets_router.post("/", response_model=dict)
@@ -187,7 +189,8 @@ def create_dataset(dataset: DatasetCreate):
         name=dataset.name,
         description=dataset.description,
         storage_id=dataset.storage_id,
-        owner_id=dataset.owner_id
+        owner_id=dataset.owner_id,
+        dataset_type=dataset.dataset_type
     )
     return {
         "id": new_dataset.id,
@@ -196,6 +199,7 @@ def create_dataset(dataset: DatasetCreate):
         "storage_id": new_dataset.storage_id,
         "owner_id": new_dataset.owner_id,
         "created_at": str(new_dataset.created_at),
+        "dataset_type": new_dataset.dataset_type
     }
 
 @datasets_router.get("/{dataset_id}", response_model=dict)
@@ -212,7 +216,8 @@ def modify_dataset(dataset_id: int, updates: DatasetUpdate):
         new_name=updates.name,
         new_description=updates.description,
         new_storage_id=updates.storage_id,
-        new_owner_id=updates.owner_id
+        new_owner_id=updates.owner_id,
+        new_dataset_type=updates.dataset_type
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -223,6 +228,7 @@ def modify_dataset(dataset_id: int, updates: DatasetUpdate):
         "storage_id": updated.storage_id,
         "owner_id": updated.owner_id,
         "created_at": str(updated.created_at),
+        "dataset_type": updated.dataset_type
     }
 
 @datasets_router.delete("/{dataset_id}", response_model=dict)

@@ -6,7 +6,7 @@ import httpx
 import shutil
 import uuid
 import os
-from functions import classify_dataset
+from functions import classify_dataset, dataset_type_description
 import zipfile
 import shutil
 import tempfile
@@ -43,7 +43,7 @@ async def create_dataset(dataset: DatasetCreate):
     async with httpx.AsyncClient() as client:
         r = await client.post(DB_SERVICE_URL + "/", json=dataset.dict())
         if r.status_code != 200:
-            raise HTTPException(status_code=r.status_code, detail=r.text)
+            return JSONResponse(status_code=r.status_code, content={"detail": "Failed to create dataset"})
         return r.json()
 
 
@@ -59,7 +59,7 @@ async def read_dataset(dataset_id: int):
     async with httpx.AsyncClient() as client:
         r = await client.get(f"{DB_SERVICE_URL}/{dataset_id}")
         if r.status_code == 404:
-            raise HTTPException(status_code=404, detail="Dataset not found")
+            return JSONResponse(status_code=404, content={"detail": "Dataset not found"})
         return r.json()
 
 
@@ -68,17 +68,40 @@ async def modify_dataset(dataset_id: int, updates: DatasetUpdate):
     async with httpx.AsyncClient() as client:
         r = await client.put(f"{DB_SERVICE_URL}/{dataset_id}", json=updates.dict())
         if r.status_code == 404:
-            raise HTTPException(status_code=404, detail="Dataset not found")
+            return JSONResponse(status_code=404, content={"detail": "Dataset not found"})
         return r.json()
 
 
 @datasets_router.delete("/{dataset_id}", response_model=dict)
 async def remove_dataset(dataset_id: int):
+    # 1. Получаем информацию о датасете из базы
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{DB_SERVICE_URL}/{dataset_id}")
+        if r.status_code == 404:
+            return {"detail": "Dataset not found"}
+        dataset = r.json()
+
+    # 2. Формируем путь к файлу и удаляем ZIP
+    storage_id = dataset.get("storage_id")
+    if storage_id:
+        file_path = os.path.join(DATASETS_DIR, f"{storage_id}.zip")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                print(f"[DELETE] File {file_path} removed successfully")
+            except Exception as e:
+                print(f"[DELETE] Error removing file {file_path}: {e}")
+                return JSONResponse(status_code=500, content={"detail": "Failed to delete dataset file"})
+        else:
+            print(f"[DELETE] File {file_path} does not exist, skipping deletion")
+
+    # 3. Удаляем запись из базы
     async with httpx.AsyncClient() as client:
         r = await client.delete(f"{DB_SERVICE_URL}/{dataset_id}")
-        if r.status_code == 404:
-            raise HTTPException(status_code=404, detail="Dataset not found")
-        return {"detail": "Dataset deleted successfully"}
+        if r.status_code != 200:
+            return JSONResponse(status_code=r.status_code, content={"detail": "Failed to delete dataset from database"})
+
+    return {"detail": "Dataset deleted successfully"}
 
 @upload_router.post("/zip")
 async def upload_zip(
@@ -165,12 +188,13 @@ async def upload_zip(
     try:
         # ЕСЛИ в Docker → замени localhost на имя сервиса
         db_response = requests.post(
-            "http://datasets_manager:8004/datasets/",
+            "http://db_service:8002/datasets/",
             json={
                 "name": name,
                 "description": description,
                 "storage_id": dataset_id,
-                "owner_id": user_id
+                "owner_id": user_id,
+                "dataset_type": dataset_type
             }
         )
     except Exception as e:
@@ -190,16 +214,78 @@ async def upload_zip(
     return {
         "message": "OK",
         "dataset_type": dataset_type,
+        "dataset_type_description": dataset_type_description(dataset_type),
         "storage_id": dataset_id,
         "filename": file.filename,
         "saved_as": f"{dataset_id}.zip"
     }
 
-@upload_router.get("/zip")
-def upload_zip_get(request: Request = None):
+@datasets_router.get("/dataset_type_name/{dataset_type}", response_model=dict)
+async def get_dataset_type_name(dataset_type: str):
+    description = dataset_type_description(dataset_type)
     return {
-        "message": "This is upload router GET endpoint. It is health"
+        "dataset_type": dataset_type,
+        "description": description
     }
+
+@datasets_router.delete("/by_storage/{storage_id}")
+def delete_dataset_by_storage(storage_id: str, request: Request):
+    print(f"[DELETE] Request to delete dataset with StorageID: {storage_id}")
+    try:
+        user_resp = requests.get("http://user_service:8000/me", cookies=request.cookies)
+        if user_resp.status_code >= 400:
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        user_id = user_resp.json()["id"]
+
+        db_resp = requests.get(f"http://datasets_manager:8004/datasets")
+        if db_resp.status_code != 200:
+            return JSONResponse(status_code=500, content={"detail": "Dataset service unavailable"})
+        datasets = db_resp.json()
+
+        dataset = next((d for d in datasets if d["storage_id"] == storage_id), None)
+        if not dataset:
+            return JSONResponse(status_code=404, content={"detail": "Dataset not found"})
+        if dataset["owner_id"] != user_id:
+            return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+
+        # Удаляем датасет по ID
+        delete_resp = requests.delete(f"http://datasets_manager:8004/datasets/{dataset['id']}")
+        if delete_resp.status_code != 200:
+            return JSONResponse(status_code=500, content={"detail": "Failed to delete dataset"})
+
+        return JSONResponse(status_code=200, content={"message": "Dataset deleted successfully"})
+    
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": f"Internal server error: {e}"})
+
+
+@datasets_router.get("/download/{storage_id}")
+def download_dataset(storage_id: str, request: Request):
+    try:
+        user_resp = requests.get("http://user_service:8000/me", cookies=request.cookies)
+        if user_resp.status_code >= 400:
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        user_id = user_resp.json()["id"]
+
+        # Получаем датасет по StorageID
+        db_resp = requests.get(f"http://datasets_manager:8004/datasets")
+        if db_resp.status_code != 200:
+            return JSONResponse(status_code=500, content={"detail": "Dataset service unavailable"})
+        datasets = db_resp.json()
+        dataset = next((d for d in datasets if d["storage_id"] == storage_id), None)
+        if not dataset:
+            return JSONResponse(status_code=404, content={"detail": "Dataset not found"})
+        if dataset["owner_id"] != user_id:
+            return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+
+        file_path = os.path.join("./datasets", f"{storage_id}.zip")
+        if not os.path.exists(file_path):
+            return JSONResponse(status_code=404, content={"detail": "File not found"})
+
+        return FileResponse(file_path, filename=f"{dataset['name']}.zip")
+    
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": f"Internal server error: {e}"})
 
 app.include_router(datasets_router)
 app.include_router(upload_router)

@@ -10,6 +10,8 @@ def is_image(filename: str) -> bool:
 def classify_dataset(tmp_dir: str) -> str:
     entries = os.listdir(tmp_dir)
     entries_paths = [os.path.join(tmp_dir, e) for e in entries]
+    print(f"[CLASSIFY] Entries found: {entries}")
+    print(f"[CLASSIFY] Entry paths: {entries_paths}")
 
     # --- 1. CSV DATASET ---
     for e in entries:
@@ -41,3 +43,12 @@ def classify_dataset(tmp_dir: str) -> str:
             return "images_by_category"
 
     return "unknown"
+
+def dataset_type_description(dataset_type: str) -> str:
+    descriptions = {
+        "csv": "Dataset containing CSV files.",
+        "images_flat": "Dataset with images stored in a flat structure.",
+        "images_by_category": "Dataset with images organized into category folders.",
+        "unknown": "Dataset type could not be determined."
+    }
+    return descriptions.get(dataset_type, "No description available.")
