@@ -295,7 +295,7 @@ async def update_project(request: Request):
 
 ''' Datasets manager endpoints '''
 
-DATA_MANAGER_URL = "http://datasets_manager:8004"
+DATASETS_MANAGER_URL = "http://datasets_manager:8004"
 
 dataset_router = APIRouter(prefix="/datasets", tags=["datasets"])
 upload_router = APIRouter(prefix="/upload", tags=["upload"])
@@ -305,7 +305,7 @@ upload_router = APIRouter(prefix="/upload", tags=["upload"])
 @dataset_router.post("/")
 async def create_dataset(dataset: dict):
     async with httpx.AsyncClient() as client:
-        r = await client.post(f"{DATA_MANAGER_URL}/datasets/", json=dataset)
+        r = await client.post(f"{DATASETS_MANAGER_URL}/datasets/", json=dataset)
         if r.status_code != 200:
             raise HTTPException(status_code=r.status_code, detail=r.text)
         return r.json()
@@ -313,13 +313,13 @@ async def create_dataset(dataset: dict):
 @dataset_router.get("/")
 async def list_datasets():
     async with httpx.AsyncClient() as client:
-        r = await client.get(f"{DATA_MANAGER_URL}/datasets/")
+        r = await client.get(f"{DATASETS_MANAGER_URL}/datasets/")
         return JSONResponse(content=r.json(), status_code=r.status_code)
 
 @dataset_router.get("/{dataset_id}")
 async def read_dataset(dataset_id: int):
     async with httpx.AsyncClient() as client:
-        r = await client.get(f"{DATA_MANAGER_URL}/datasets/{dataset_id}")
+        r = await client.get(f"{DATASETS_MANAGER_URL}/datasets/{dataset_id}")
         if r.status_code == 404:
             raise HTTPException(status_code=404, detail="Dataset not found")
         return r.json()
@@ -327,7 +327,7 @@ async def read_dataset(dataset_id: int):
 @dataset_router.put("/{dataset_id}")
 async def modify_dataset(dataset_id: int, updates: dict):
     async with httpx.AsyncClient() as client:
-        r = await client.put(f"{DATA_MANAGER_URL}/datasets/{dataset_id}", json=updates)
+        r = await client.put(f"{DATASETS_MANAGER_URL}/datasets/{dataset_id}", json=updates)
         if r.status_code == 404:
             raise HTTPException(status_code=404, detail="Dataset not found")
         return r.json()
@@ -335,7 +335,7 @@ async def modify_dataset(dataset_id: int, updates: dict):
 @dataset_router.delete("/{dataset_id}")
 async def remove_dataset(dataset_id: int):
     async with httpx.AsyncClient() as client:
-        r = await client.delete(f"{DATA_MANAGER_URL}/datasets/{dataset_id}")
+        r = await client.delete(f"{DATASETS_MANAGER_URL}/datasets/{dataset_id}")
         if r.status_code == 404:
             raise HTTPException(status_code=404, detail="Dataset not found")
         return {"detail": "Dataset deleted successfully"}
@@ -350,23 +350,28 @@ async def upload_zip(
         description: str = Form(""),
         request: Request = None
     ):
-    print("Received upload request for file:", file)
-    print("Name:", name, "Description:", description)
+    print("Received upload request for file:", file.filename)
 
     files = {
-        "file": (file.filename, file.file, file.content_type)
+        "file": (file.filename, await file.read(), file.content_type)
     }
 
-    url = f"{DATA_MANAGER_URL}/upload/zip"
+    data = {
+        "name": name,
+        "description": description
+    }
+
+    url = f"{DATASETS_MANAGER_URL}/upload/zip"
     print(f"Forwarding upload to {url}")
 
     async with httpx.AsyncClient(timeout=300.0) as client:
         r = await client.post(
             url,
             files=files,
-            data={"name": name, "description": description},
+            data=data,
             cookies=request.cookies
         )
+    print("Response from Datasets manager:", r.content)
 
     return JSONResponse(content=r.json(), status_code=r.status_code)
 
