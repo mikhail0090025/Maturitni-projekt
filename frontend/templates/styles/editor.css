@@ -17,7 +17,7 @@
   margin-bottom:12px;
 }
 
-/* Layers list & card */
+/*
 .layer-card {
   background: #fff;
   border: 1px solid #e0e0e0;
@@ -56,6 +56,49 @@
   border-radius:4px;
   width:100%;
   box-sizing:border-box;
+}
+*/
+
+.layer-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 5px;
+  margin-bottom: 5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  font-size: 0.75rem;
+}
+
+.layer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.layer-controls button {
+  margin-left: 3px;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+}
+
+.layer-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.layer-body label {
+  flex: 0 0 auto;
+  min-width: 60px;
+}
+
+.layer-body input {
+  flex: 1 1 auto;
+  width: 60px;
+  padding: 3px 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .btn {

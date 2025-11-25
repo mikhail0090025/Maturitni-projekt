@@ -51,6 +51,25 @@ def read_project(project_id: int):
         return JSONResponse(content={"detail": "Failed to fetch project"}, status_code=500)
     return request_.json()
 
+@app.get("/json/{project_id}", response_model=dict)
+def read_project_json(project_id: int):
+    resp = requests.get(f"http://db_service:8002/projects/{project_id}")
+
+    if resp.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if resp.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch project"}, status_code=500)
+
+    data_json = resp.json()  # уже Python dict
+    print("Data JSON:", data_json)
+
+    # Просто берем поле project_json
+    project_json = data_json.get('project_json')
+    if project_json is None:
+        return JSONResponse(content={"detail": "Project JSON not found"}, status_code=500)
+
+    return project_json
+
 @app.put("/{project_id}", response_model=dict)
 def modify_project(project_id: int, updates: ProjectUpdate):
     request_ = requests.put(f"http://db_service:8002/projects/{project_id}", json=updates.dict(exclude_unset=True))

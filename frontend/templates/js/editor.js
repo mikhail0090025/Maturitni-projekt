@@ -34,18 +34,18 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         );
       case "Conv2D":
         return (
-          <div className="layer-params-row">
-            <label>In channels</label>
+          <>
+            <label>In C</label>
             <input type="number" value={p.in_channels} onChange={e => handleChange("in_channels", Number(e.target.value))} />
-            <label>Out channels</label>
+            <label>Out C</label>
             <input type="number" value={p.out_channels} onChange={e => handleChange("out_channels", Number(e.target.value))} />
-            <label>Kernel size</label>
+            <label>Kernel</label>
             <input type="number" value={p.kernel_size} onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
             <input type="number" value={p.stride} onChange={e => handleChange("stride", Number(e.target.value))} />
-            <label>Padding</label>
+            <label>Pad</label>
             <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
-          </div>
+          </>
         );
       case "LeakyReLU":
         return (
@@ -63,19 +63,9 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         );
       case "BatchNorm1d":
       case "BatchNorm2d":
-        return (
-          <>
-            <label>Num features</label>
-            <input type="number" value={p.num_features} onChange={e => handleChange("num_features", Number(e.target.value))} />
-          </>
-        );
       case "LayerNorm":
-        return (
-          <>
-            <label>Normalized shape</label>
-            <input type="number" value={p.normalized_shape} onChange={e => handleChange("normalized_shape", Number(e.target.value))} />
-          </>
-        );
+        return <em className="no-params">No editable params</em>;
+
       default:
         return <em className="no-params">No editable params</em>;
     }
@@ -111,6 +101,7 @@ function Editor() {
   
   const updateLayer = (idx, newLayer) => setLayers(prev => prev.map((l, i) => (i === idx ? newLayer : l)));
   */
+ /*
   const pushLayer = (type) => {
     const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
     
@@ -161,6 +152,55 @@ function Editor() {
         }
         if (nextLayer.type === "Conv2D" && newLayer.type === "Conv2D") {
           nextLayer.params.in_channels = newLayer.params.out_channels;
+        }
+      }
+
+      return updated;
+    });
+  };
+*/
+  const isDataLayer = (type) => ["Linear", "Conv2D"].includes(type);
+
+  const pushLayer = (type) => {
+    const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
+    setLayers(prev => {
+      const newLayer = { type, params: template };
+
+      // Авто-связка с последним Data Layer
+      for (let i = prev.length - 1; i >= 0; i--) {
+        if (isDataLayer(prev[i].type)) {
+          if (type === "Linear" && prev[i].type === "Linear") {
+            newLayer.params.in_features = prev[i].params.out_features;
+          }
+          if (type === "Conv2D" && prev[i].type === "Conv2D") {
+            newLayer.params.in_channels = prev[i].params.out_channels;
+          }
+          break;
+        }
+      }
+
+      return [...prev, newLayer];
+    });
+  };
+
+  const updateLayer = (idx, newLayer) => {
+    setLayers(prev => {
+      const updated = prev.map((l, i) => (i === idx ? newLayer : l));
+
+      // Авто-связка: пройтись вперёд и обновить все следующие Data Layer
+      let lastOutLinear = null;
+      let lastOutConv = null;
+      for (let i = 0; i < updated.length; i++) {
+        const l = updated[i];
+
+        if (l.type === "Linear") {
+          if (lastOutLinear !== null) l.params.in_features = lastOutLinear;
+          lastOutLinear = l.params.out_features;
+        }
+
+        if (l.type === "Conv2D") {
+          if (lastOutConv !== null) l.params.in_channels = lastOutConv;
+          lastOutConv = l.params.out_channels;
         }
       }
 
