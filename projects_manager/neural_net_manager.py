@@ -9,18 +9,24 @@ def create_model(json_text):
     layers_list = []
     architecture = json.loads(json_text)
 
-    for layer in architecture:
+    last_out_size = 1
+    for i, layer in enumerate(architecture):
         layer_type = layer['type']
         params = layer.get('params', {})
 
         # --- Полносвязные слои ---
         if layer_type == 'Linear':
+            if params['in_features'] != last_out_size and i != 0:
+                raise Exception("Invalid input size for layer", layer)
             layers_list.append(
                 nn.Linear(params['in_features'], params['out_features'])
             )
+            last_out_size = params['out_features']
 
         # --- Свёрточные слои ---
         elif layer_type == 'Conv2D':
+            if params['in_channels'] != last_out_size and i != 0:
+                raise Exception("Invalid input size for layer", layer)
             layers_list.append(
                 nn.Conv2d(
                     in_channels=params['in_channels'],
@@ -30,6 +36,7 @@ def create_model(json_text):
                     padding=params.get('padding', 0)
                 )
             )
+            last_out_size = params['out_channels']
 
         # --- Пулинг ---
         elif layer_type == 'MaxPool2D':
@@ -52,17 +59,17 @@ def create_model(json_text):
 
         # --- Нормализация ---
         elif layer_type == 'BatchNorm1d':
-            layers_list.append(nn.BatchNorm1d(params['num_features']))
+            layers_list.append(nn.BatchNorm1d(last_out_size))
         elif layer_type == 'BatchNorm2d':
-            layers_list.append(nn.BatchNorm2d(params['num_features']))
+            layers_list.append(nn.BatchNorm2d(last_out_size))
         elif layer_type == 'LayerNorm':
-            layers_list.append(nn.LayerNorm(params['normalized_shape']))
+            layers_list.append(nn.LayerNorm(last_out_size))
 
         # --- Активации ---
         elif layer_type == 'ReLU':
             layers_list.append(nn.ReLU())
         elif layer_type == 'LeakyReLU':
-            layers_list.append(nn.LeakyReLU(params.get('negative_slope', 0.01)))
+            layers_list.append(nn.LeakyReLU(params.get('alpha', 0.01)))
         elif layer_type == 'Sigmoid':
             layers_list.append(nn.Sigmoid())
         elif layer_type == 'Tanh':
@@ -88,6 +95,8 @@ def create_model(json_text):
 
     # Собираем последовательную модель
     model = nn.Sequential(*layers_list)
+    print("Model:")
+    print(model)
     return model
 
 class FullModel:

@@ -1,0 +1,198 @@
+/* editor.css */
+#editor-block {
+  padding: 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+}
+
+/* hint and action row */
+.editor-top .hint {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+.action-row {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+/*
+.layer-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(15,15,15,0.03);
+}
+
+.layer-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.layer-controls button {
+  margin-left:6px;
+}
+
+.layer-body {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap:6px 10px;
+  align-items:center;
+}
+
+.layer-body label {
+  font-size: 0.9rem;
+  color: #222;
+}
+
+.layer-body input[type="number"], .layer-body input[type="text"] {
+  padding:6px 8px;
+  border: 1px solid #cfcfcf;
+  border-radius:4px;
+  width:100%;
+  box-sizing:border-box;
+}
+*/
+
+.layer-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 5px;
+  margin-bottom: 5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  font-size: 0.75rem;
+}
+
+.layer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.layer-controls button {
+  margin-left: 3px;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+}
+
+.layer-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.layer-body label {
+  flex: 0 0 auto;
+  min-width: 60px;
+}
+
+.layer-body input {
+  flex: 1 1 auto;
+  width: 60px;
+  padding: 3px 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.btn {
+  cursor:pointer;
+  border: none;
+  border-radius: 4px;
+  padding:6px 10px;
+  font-size:0.9rem;
+}
+
+.btn-sm {
+  padding:4px 8px;
+  font-size:0.8rem;
+}
+
+.btn-primary {
+  background:#007bff; color:#fff;
+}
+
+.btn-danger {
+  background:#dc3545; color:#fff;
+}
+
+.btn-success {
+  background:#28a745; color:#fff;
+}
+
+.empty {
+  color:#666;
+  font-style:italic;
+  padding: 8px 6px;
+}
+
+.small-muted {
+  color:#666;
+  font-size:0.9rem;
+}
+
+.editor-container {
+    display: flex !important;
+    width: 100% !important;
+    margin: 0 !important;
+    gap: 16px !important;
+    left: 0px !important;
+}
+
+.editor-sidebar {
+  width: 300px;           /* фиксированная ширина */
+  border-right: 1px solid #ccc;
+  padding: 10px;
+  box-sizing: border-box;
+  flex-shrink: 0;         /* чтобы не сжималась */
+}
+
+.editor-main {
+  flex: 1;                /* основной контент занимает оставшееся место */
+  padding: 10px;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tabs button {
+  flex: 1;
+  margin-right: 2px;
+  padding: 6px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #f0f0f0;
+}
+
+.tabs button.active {
+  background: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.button-save{
+    height: 40px !important;
+}
+
+/* base.css rewriting */
+main {
+    flex: 1;
+    padding: 2rem;
+    max-width: 100% !important;
+    margin: 0 auto;
+}
