@@ -196,3 +196,8 @@ main {
     max-width: 100% !important;
     margin: 0 auto;
 }
+
+#editor-block{
+    width: 100% !important;
+    display: flex !important;
+}

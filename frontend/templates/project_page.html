@@ -14,21 +14,25 @@
 
 {% block content %}
 <div class="main-block">
-    <h1>{{ project_data.name }}</h1><br>
-    <h4>{{ project_data.description }}</h4>
-    <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
-        <button class="btn btn-primary">Download file</button>
-    </a>
-    <input type="hidden" id="project-id" value="{{ project_data.id }}">
-    <input type="hidden" id="project-json" value="{{ project_data.project_json }}">
-    <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
-    <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
+    <div id="header-block">
+        <h1>{{ project_data.name }}</h1><br>
+        <!-- <h4>{{ project_data.description }}</h4> -->
+    </div>
     <div class="settings-block">
         {% include "editor/input_settings.html" %}
     </div>
 
     <div class="settings-block">
         {% include "editor/output_settings.html" %}
+    </div>
+    <div id="editor-block">
+        <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
+            <button class="btn btn-primary">Download file</button>
+        </a>
+        <input type="hidden" id="project-id" value="{{ project_data.id }}">
+        <input type="hidden" id="project-json" value="{{ project_data.project_json }}">
+        <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
+        <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
     </div>
 
 </div>

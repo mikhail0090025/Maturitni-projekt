@@ -76,6 +76,16 @@ select {
     width: 70px;
 }
 
-.settings-block{
+.settings-block {
     display: inline-block;
+    margin: 20px;
+    vertical-align: top;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
 }
