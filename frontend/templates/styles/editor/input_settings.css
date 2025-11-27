@@ -30,9 +30,6 @@
 }
 
 /* Tab content */
-.tab-content {
-    display: none;
-}
 .tab-content.active {
     display: block;
 }
@@ -83,9 +80,16 @@ select {
 }
 
 .tab-content {
+    /*
     display: none;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;*/
+    transition: max-height 0.3s ease, opacity 0.3s ease;
 }
 
 .tab-content.active {
     display: block;
+    max-height: 1000px; /* достаточно большой, чтобы вместить контент */
+    opacity: 1;
 }

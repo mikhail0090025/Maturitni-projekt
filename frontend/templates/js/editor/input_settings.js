@@ -1,48 +1,67 @@
-
-document.querySelectorAll(".tab-button").forEach(btn => {
-    btn.addEventListener("click", () => {
-        const tab = btn.getAttribute("data-tab");
-
-        // Кнопки
-        document.querySelectorAll(".tab-button")
-            .forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        // Контент
-        document.querySelectorAll(".tab-content")
-            .forEach(c => c.classList.remove("active"));
-        document.getElementById("tab-" + tab).classList.add("active");
-    });
-});
-
-/*
 document.addEventListener("DOMContentLoaded", () => {
-    // Все вкладки изначально скрыты
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+    const sidebar = document.querySelector(".editor-sidebar");
+    if (!sidebar) return;
 
-    document.querySelectorAll(".tab-button").forEach(btn => {
+    const buttons = sidebar.querySelectorAll(".tabs button");
+    const content = sidebar.querySelector(".tab-content");
+
+    // Изначально скрываем содержимое
+    content.style.display = "none";
+    buttons.forEach(btn => btn.classList.remove("active"));
+
+    buttons.forEach(btn => {
         btn.addEventListener("click", () => {
-            const tab = btn.getAttribute("data-tab");
-            const content = document.getElementById("tab-" + tab);
             const isActive = btn.classList.contains("active");
 
-            if (isActive) {
-                // Вкладка уже открыта → свернуть
-                btn.classList.remove("active");
-                content.classList.remove("active");
-                return;
+            // Скрываем содержимое
+            content.style.display = "none";
+            buttons.forEach(b => b.classList.remove("active"));
+
+            if (!isActive) {
+                // Показываем содержимое, если вкладка была неактивна
+                btn.classList.add("active");
+                content.style.display = "block";
             }
-
-            // Иначе — открыть новую вкладку
-            document.querySelectorAll(".tab-button")
-                .forEach(b => b.classList.remove("active"));
-            document.querySelectorAll(".tab-content")
-                .forEach(c => c.classList.remove("active"));
-
-            btn.classList.add("active");
-            content.classList.add("active");
         });
     });
 });
-*/
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Находим все блоки с вкладками
+    const tabBlocks = document.querySelectorAll(".input-settings-block");
+
+    tabBlocks.forEach(block => {
+        const buttons = block.querySelectorAll(".tabs .tab-button");
+        const contents = block.querySelectorAll(".tab-content");
+
+        // Изначально скрываем все контенты кроме активного
+        contents.forEach(content => {
+            if (!content.classList.contains("active")) {
+                content.style.display = "none";
+            } else {
+                content.style.display = "block";
+            }
+        });
+
+        buttons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetId = btn.getAttribute("data-tab");
+                const targetContent = block.querySelector("#tab-" + targetId);
+
+                const isActive = btn.classList.contains("active");
+
+                // Сначала скрываем все
+                buttons.forEach(b => b.classList.remove("active"));
+                contents.forEach(c => c.style.display = "none");
+
+                // Если вкладка была неактивна, показываем её
+                if (!isActive) {
+                    btn.classList.add("active");
+                    if (targetContent) {
+                        targetContent.style.display = "block";
+                    }
+                }
+            });
+        });
+    });
+});

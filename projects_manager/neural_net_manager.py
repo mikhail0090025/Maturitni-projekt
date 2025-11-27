@@ -3,6 +3,17 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 import json
 
+class DepthwiseSeparableConv(nn.Module):
+    def __init__(self, in_ch, out_ch, kernel_size=3, padding=1, stride=1, groups=1):
+        super().__init__()
+        self.depthwise = nn.Conv2d(in_ch, in_ch, kernel_size=kernel_size, stride=stride, padding=padding, groups=in_ch)
+        self.pointwise = nn.Conv2d(in_ch, out_ch, kernel_size=1, groups=groups)
+
+    def forward(self, x):
+        x = self.depthwise(x)
+        x = self.pointwise(x)
+        return x
+
 def create_model(json_text):
     print("JSON text for model creation:")
     print(json_text)
@@ -31,6 +42,20 @@ def create_model(json_text):
                 nn.Conv2d(
                     in_channels=params['in_channels'],
                     out_channels=params['out_channels'],
+                    kernel_size=params['kernel_size'],
+                    stride=params.get('stride', 1),
+                    padding=params.get('padding', 0)
+                )
+            )
+            last_out_size = params['out_channels']
+
+        elif layer_type == 'DSConv2D':
+            if params['in_channels'] != last_out_size and i != 0:
+                raise Exception("Invalid input size for layer", layer)
+            layers_list.append(
+                DepthwiseSeparableConv(
+                    in_ch=params['in_channels'],
+                    out_ch=params['out_channels'],
                     kernel_size=params['kernel_size'],
                     stride=params.get('stride', 1),
                     padding=params.get('padding', 0)

@@ -47,6 +47,21 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
             <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
+      case "DSConv2D":
+        return (
+          <>
+            <label>In C</label>
+            <input type="number" value={p.in_channels} onChange={e => handleChange("in_channels", Number(e.target.value))} />
+            <label>Out C</label>
+            <input type="number" value={p.out_channels} onChange={e => handleChange("out_channels", Number(e.target.value))} />
+            <label>Kernel</label>
+            <input type="number" value={p.kernel_size} onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <label>Stride</label>
+            <input type="number" value={p.stride} onChange={e => handleChange("stride", Number(e.target.value))} />
+            <label>Pad</label>
+            <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
+          </>
+        );
       case "LeakyReLU":
         return (
           <>
@@ -172,7 +187,7 @@ function Editor() {
           if (type === "Linear" && prev[i].type === "Linear") {
             newLayer.params.in_features = prev[i].params.out_features;
           }
-          if (type === "Conv2D" && prev[i].type === "Conv2D") {
+          if ((type === "Conv2D" || type === "DSConv2D") && (prev[i].type === "Conv2D" || prev[i].type === "DSConv2D")) {
             newLayer.params.in_channels = prev[i].params.out_channels;
           }
           break;
@@ -198,7 +213,7 @@ function Editor() {
           lastOutLinear = l.params.out_features;
         }
 
-        if (l.type === "Conv2D") {
+        if (l.type === "Conv2D" || l.type === "DSConv2D") {
           if (lastOutConv !== null) l.params.in_channels = lastOutConv;
           lastOutConv = l.params.out_channels;
         }
@@ -261,6 +276,7 @@ function Editor() {
           <>
             <button className="btn btn-primary" onClick={() => pushLayer("Linear")}>Add Linear</button>
             <button className="btn btn-primary" onClick={() => pushLayer("Conv2D")}>Add Conv2D</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("DSConv2D")}>Add Depthwise Separable Conv2D</button>
           </>
         );
       case "activations":
