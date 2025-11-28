@@ -300,6 +300,27 @@ async def update_project(request: Request):
 
     return JSONResponse(content={"detail": "Project saved successfully"}, status_code=200)
 
+@app.post("/delete_project/{project_id}")
+def delete_project_endpoint(project_id: int, request: Request):
+    project_response = requests.get(f'http://projects_manager:8003/{project_id}')
+    if project_response.status_code >= 400:
+        return JSONResponse(content={'error': f'Couldnt get project with id {project_id}'})
+    user_response = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if user_response.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = user_response.json()
+    if user_data['username'] != project_response.json().get('owner_username'):
+        return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "You are not the owner of this project!"})
+
+    delete_response = requests.delete(f'http://projects_manager:8003/{project_id}')
+    if delete_response.status_code >= 400:
+        return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "Failed to delete project!"})
+
+    return JSONResponse(content={"detail": "Project deleted successfully"}, status_code=200)
+
 ''' Datasets manager endpoints '''
 
 DATASETS_MANAGER_URL = "http://datasets_manager:8004"

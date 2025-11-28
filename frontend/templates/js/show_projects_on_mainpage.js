@@ -29,8 +29,8 @@ const MyProjects = () => {
             overflowY: "auto"
         }}>
             {projects.map((p, i) => (
+                <div key={i}>
                 <a
-                    key={i}
                     href={`/projects/${p.id}`}
                     style={{
                         padding: "6px 10px",
@@ -48,6 +48,8 @@ const MyProjects = () => {
                 >
                     {p.name}
                 </a>
+                <button className="btn btn-danger btn-sm delete-project-btn" data-id={p.id}>Delete</button>
+                </div>
             ))}
         </div>
     );

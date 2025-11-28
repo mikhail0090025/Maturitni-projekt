@@ -15,38 +15,86 @@ const LAYER_TEMPLATES = {
   LayerNorm: { normalized_shape: 1 },
 };
 
+function countParams(layer) {
+  const p = layer.params || {};
+
+  switch (layer.type) {
+    case "Linear":
+      return p.in_features * p.out_features + p.out_features;
+
+    case "Conv2D":
+      return (
+        p.out_channels *
+        p.in_channels *
+        p.kernel_size *
+        p.kernel_size +
+        p.out_channels
+      );
+
+    case "BatchNorm1d":
+    case "BatchNorm2d":
+      return 2 * p.num_features;
+
+    case "LayerNorm":
+      return 2 * p.normalized_shape;
+
+    case "PReLU":
+      return 1;
+
+    default:
+      return 0;
+  }
+}
+
 function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }) {
+  const p = layer.params || {};
+
   const handleChange = (key, val) => {
-    onUpdate(index, { ...layer, params: { ...layer.params, [key]: val } });
+    onUpdate(index, { ...layer, params: { ...p, [key]: val } });
   };
 
+  const paramCount = countParams(layer);
+
   const renderFields = () => {
-    const p = layer.params || {};
     switch (layer.type) {
       case "Linear":
         return (
           <>
             <label>In features</label>
-            <input type="number" value={p.in_features} onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <input type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
+
             <label>Out features</label>
-            <input type="number" value={p.out_features} onChange={e => handleChange("out_features", Number(e.target.value))} />
+            <input type="number" value={p.out_features}
+              onChange={e => handleChange("out_features", Number(e.target.value))} />
           </>
         );
+
       case "Conv2D":
         return (
           <>
             <label>In C</label>
-            <input type="number" value={p.in_channels} onChange={e => handleChange("in_channels", Number(e.target.value))} />
+            <input type="number" value={p.in_channels}
+              onChange={e => handleChange("in_channels", Number(e.target.value))} />
+
             <label>Out C</label>
-            <input type="number" value={p.out_channels} onChange={e => handleChange("out_channels", Number(e.target.value))} />
+            <input type="number" value={p.out_channels}
+              onChange={e => handleChange("out_channels", Number(e.target.value))} />
+
             <label>Kernel</label>
-            <input type="number" value={p.kernel_size} onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <input type="number" value={p.kernel_size}
+              onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+
             <label>Stride</label>
-            <input type="number" value={p.stride} onChange={e => handleChange("stride", Number(e.target.value))} />
+            <input type="number" value={p.stride}
+              onChange={e => handleChange("stride", Number(e.target.value))} />
+
             <label>Pad</label>
-            <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
+            <input type="number" value={p.padding}
+              onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
+<<<<<<< Updated upstream
       case "DSConv2D":
         return (
           <>
@@ -62,20 +110,27 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
             <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
+=======
+
+>>>>>>> Stashed changes
       case "LeakyReLU":
         return (
           <>
             <label>Alpha</label>
-            <input type="number" step="0.01" value={p.alpha} onChange={e => handleChange("alpha", Number(e.target.value))} />
+            <input type="number" step="0.01" value={p.alpha}
+              onChange={e => handleChange("alpha", Number(e.target.value))} />
           </>
         );
+
       case "Softmax":
         return (
           <>
             <label>Dim</label>
-            <input type="number" value={p.dim ?? 1} onChange={e => handleChange("dim", Number(e.target.value))} />
+            <input type="number" value={p.dim ?? 1}
+              onChange={e => handleChange("dim", Number(e.target.value))} />
           </>
         );
+
       case "BatchNorm1d":
       case "BatchNorm2d":
       case "LayerNorm":
@@ -89,7 +144,13 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
   return (
     <div className="layer-card">
       <div className="layer-header">
-        <div><strong>{index + 1}. {layer.type}</strong></div>
+        <div>
+          <strong>{index + 1}. {layer.type}</strong>
+          <div className="param-count">
+            🧮 Params: <strong>{paramCount.toLocaleString()}</strong>
+          </div>
+        </div>
+
         <div className="layer-controls">
           <button className="btn btn-sm" onClick={() => moveUp(index)} disabled={index === 0}>▲</button>
           <button className="btn btn-sm" onClick={() => moveDown(index)} disabled={index === total - 1}>▼</button>
