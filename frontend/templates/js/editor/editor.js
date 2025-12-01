@@ -26,7 +26,7 @@ const LAYER_TEMPLATES = {
   InstanceNorm2D: { in_features: 1, out_features: 8},
   GroupNorm: { in_features: 1, out_features: 8, num_groups: 1 },
   Dropout: { in_features: 1, out_features: 8, p: 0.5 },
-  PixelShuffle: { in_features: 1, out_features: 8, upscale_factor: 2 },
+  PixelShuffle: { in_features: 8, out_features: 8, upscale_factor: 1 },
 };
 
 function countParams(layer) {
@@ -322,7 +322,8 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
           </>
         );
       case "PixelShuffle": {
-        const valid = validUpscaleFactors(p.in_features).filter(r => r !== 1);
+        // const valid = validUpscaleFactors(p.in_features).filter(r => r !== 1);
+        const valid = validUpscaleFactors(p.in_features);
 
         return (
           <>
@@ -419,6 +420,16 @@ function Editor() {
         }
       };
     });
+
+    for (let i = 1; i < result.length; i++) {
+      result[i] = {
+        ...result[i],
+        params: {
+          ...result[i].params,
+          in_features: result[i - 1].params.out_features
+        }
+      };
+    }
 
     console.log("Result:");
     console.log(result);
