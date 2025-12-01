@@ -3,16 +3,30 @@ const { useState, useEffect } = React;
 
 const LAYER_TEMPLATES = {
   Linear: { in_features: 1, out_features: 1 },
-  Conv2D: { in_channels: 1, out_channels: 8, kernel_size: 3, stride: 1, padding: 0 },
-  ReLU: {},
-  LeakyReLU: { alpha: 0.01 },
-  PReLU: { /* params handled differently in backend if needed */ },
-  Sigmoid: {},
-  Tanh: {},
-  Softmax: { dim: 1 },
-  BatchNorm1d: { num_features: 1 },
-  BatchNorm2d: { num_features: 1 },
-  LayerNorm: { normalized_shape: 1 },
+  Conv2D: { in_features: 1, out_features: 8, kernel_size: 3, stride: 1, padding: 1 },
+  DSConv2D: { in_features: 1, out_features: 8, kernel_size: 3, stride: 1, padding: 1 },
+  ReLU: { in_features: 1, out_features: 8 },
+  LeakyReLU: { in_features: 1, out_features: 8, alpha: 0.01 },
+  PReLU: { in_features: 1, out_features: 8 },
+  Sigmoid: { in_features: 1, out_features: 8 },
+  Tanh: { in_features: 1, out_features: 8 },
+  Softmax: { in_features: 1, out_features: 8 },
+  BatchNorm1d: { in_features: 1, out_features: 8 },
+  BatchNorm2d: { in_features: 1, out_features: 8 },
+  LayerNorm: { in_features: 1, out_features: 8 },
+
+  Conv2DTranspose: { in_features: 1, out_features: 8, kernel_size: 3, stride: 1, padding: 1, scale_factor: 2 },
+  Upsample: { in_features: 1, out_features: 8, scale_factor: 2, mode: "nearest" },
+  MaxPool2D: { in_features: 1, out_features: 8, kernel_size: 2, stride: 2 },
+  AvgPool2D: { in_features: 1, out_features: 8, kernel_size: 2, stride: 2 },
+  ConvolutionalAttention: { in_features: 1, out_features: 8, num_heads: 4},
+  SEBlock: { in_features: 1, out_features: 8, reduction: 16 },
+  ResidualBlock: { in_features: 1, out_features: 8, kernel_size: 3, stride: 1, padding: 1, depth: 2 },
+  InstanceNorm1D: { in_features: 1, out_features: 8},
+  InstanceNorm2D: { in_features: 1, out_features: 8},
+  GroupNorm: { in_features: 1, out_features: 8, num_groups: 1 },
+  Dropout: { in_features: 1, out_features: 8, p: 0.5 },
+  PixelShuffle: { in_features: 1, out_features: 8, upscale_factor: 2 },
 };
 
 function countParams(layer) {
@@ -24,11 +38,11 @@ function countParams(layer) {
 
     case "Conv2D":
       return (
-        p.out_channels *
-        p.in_channels *
+        p.out_features *
+        p.in_features *
         p.kernel_size *
         p.kernel_size +
-        p.out_channels
+        p.out_features
       );
 
     case "BatchNorm1d":
@@ -40,16 +54,62 @@ function countParams(layer) {
 
     case "PReLU":
       return 1;
+    
+    case "DSConv2D":
+      return (
+        p.in_features * p.kernel_size * p.kernel_size + // depthwise
+        p.in_features * p.out_features + // pointwise
+        p.out_features // biases
+      );
+    
+    case "ConvolutionalAttention":
+      const head_dim = p.in_features / p.num_heads;
+      return 3 * (p.in_features * head_dim) + (p.num_heads * head_dim * p.in_features); // Q,K,V and output
+
+    case "SEBlock":
+      return (p.in_features * (p.in_features / p.reduction)) + ((p.in_features / p.reduction) * p.in_features);
+    
+    case "ResidualBlock":
+      const first_conv_params = (p.out_features * p.in_features * p.kernel_size * p.kernel_size) + p.out_features;
+      const other_convs_params = (p.depth - 1) * ((p.out_features * p.out_features * p.kernel_size * p.kernel_size) + p.out_features);
+      return first_conv_params + other_convs_params;
+    
+    case "Conv2DTranspose":
+      return (
+        p.in_features * p.out_features * p.kernel_size * p.kernel_size +
+        p.out_features
+      );
+    
+    case "InstanceNorm1D":
+    case "InstanceNorm2D":
+      return 2 * p.num_features;
+    case "GroupNorm":
+      return 2 * p.num_channels;
+    case "Dropout":
+      return 0;
+    case "PixelShuffle":
+      return 0;
 
     default:
       return 0;
   }
 }
 
+function validUpscaleFactors(inChannels) {
+  const factors = [];
+  for (let r = 1; r <= Math.sqrt(inChannels); r++) {
+    if (inChannels % (r * r) === 0) {
+      factors.push(r);
+    }
+  }
+  return factors;
+}
+
 function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }) {
   const p = layer.params || {};
 
   const handleChange = (key, val) => {
+    console.log("Changing", key, "to", val);
     onUpdate(index, { ...layer, params: { ...p, [key]: val } });
   };
 
@@ -74,12 +134,12 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In C</label>
-            <input type="number" value={p.in_channels}
-              onChange={e => handleChange("in_channels", Number(e.target.value))} />
+            <input type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
 
             <label>Out C</label>
-            <input type="number" value={p.out_channels}
-              onChange={e => handleChange("out_channels", Number(e.target.value))} />
+            <input type="number" value={p.out_features}
+              onChange={e => handleChange("out_features", Number(e.target.value))} />
 
             <label>Kernel</label>
             <input type="number" value={p.kernel_size}
@@ -94,14 +154,13 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
               onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
-<<<<<<< Updated upstream
       case "DSConv2D":
         return (
           <>
             <label>In C</label>
-            <input type="number" value={p.in_channels} onChange={e => handleChange("in_channels", Number(e.target.value))} />
+            <input type="number" value={p.in_features} onChange={e => handleChange("in_features", Number(e.target.value))} />
             <label>Out C</label>
-            <input type="number" value={p.out_channels} onChange={e => handleChange("out_channels", Number(e.target.value))} />
+            <input type="number" value={p.out_features} onChange={e => handleChange("out_features", Number(e.target.value))} />
             <label>Kernel</label>
             <input type="number" value={p.kernel_size} onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
@@ -110,9 +169,6 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
             <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
-=======
-
->>>>>>> Stashed changes
       case "LeakyReLU":
         return (
           <>
@@ -130,11 +186,168 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
               onChange={e => handleChange("dim", Number(e.target.value))} />
           </>
         );
+      
+      case "Conv2DTranspose":
+        return (
+          <>
+            <label>In C</label>
+            <input type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <label>Out C</label>
+            <input type="number" value={p.out_features}
+              onChange={e => handleChange("out_features", Number(e.target.value))} />
+            <label>Kernel</label>
+            <input type="number" value={p.kernel_size}
+              onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <label>Stride</label>
+            <input type="number" value={p.stride}
+              onChange={e => handleChange("stride", Number(e.target.value))} />
+            <label>Pad</label>
+            <input type="number" value={p.padding}
+              onChange={e => handleChange("padding", Number(e.target.value))} />
+            <label>Scale Factor</label>
+            <input type="number" value={p.scale_factor}
+              onChange={e => handleChange("scale_factor", Number(e.target.value))} />
+          </>
+        );
+      
+      case "Upsample":
+        return (
+          <>
+            <label>Scale Factor</label>
+            <input type="number" value={p.scale_factor}
+              onChange={e => handleChange("scale_factor", Number(e.target.value))} />
+            <label>Mode</label>
+            <input type="text" value={p.mode}
+              onChange={e => handleChange("mode", e.target.value)} />
+          </>
+        );
 
-      case "BatchNorm1d":
-      case "BatchNorm2d":
-      case "LayerNorm":
-        return <em className="no-params">No editable params</em>;
+      case "MaxPool2D":
+        return (
+          <>
+            <label>Kernel Size</label>
+            <input type="number" value={p.kernel_size}
+              onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <label>Stride</label>
+            <input type="number" value={p.stride}
+              onChange={e => handleChange("stride", Number(e.target.value))} />
+          </>
+        );
+      case "AvgPool2D":
+        return (
+          <>
+            <label>Kernel Size</label>
+            <input type="number" value={p.kernel_size}
+              onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <label>Stride</label>
+            <input type="number" value={p.stride}
+              onChange={e => handleChange("stride", Number(e.target.value))} />
+          </>
+        );
+      
+      case "ConvolutionalAttention":
+        return (
+          <>
+            <label>In Channels</label>
+            <input type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <label>Num Heads</label>
+            <input type="number" value={p.num_heads}
+              onChange={e => handleChange("num_heads", Number(e.target.value))} />
+          </>
+        );
+      
+      case "SEBlock":
+        return (
+          <>
+            <label>In Channels</label>
+            <input type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <label>Reduction</label>
+            <input type="number" value={p.reduction}
+              onChange={e => handleChange("reduction", Number(e.target.value))} />
+          </>
+        );
+      case "ResidualBlock":
+        return (
+          <>
+            <label>In Channels</label>
+            <input type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <label>Out Channels</label>
+            <input type="number" value={p.out_features}
+              onChange={e => handleChange("out_features", Number(e.target.value))} />
+            <label>Kernel Size</label>
+            <input type="number" value={p.kernel_size}
+              onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <label>Stride</label>
+            <input type="number" value={p.stride}
+              onChange={e => handleChange("stride", Number(e.target.value))} />
+            <label>Padding</label>
+            <input type="number" value={p.padding}
+              onChange={e => handleChange("padding", Number(e.target.value))} />
+            <label>Depth</label>
+            <input type="number" value={p.depth}
+              onChange={e => handleChange("depth", Number(e.target.value))} />
+          </>
+        );
+      
+      case "InstanceNorm1D":
+      case "InstanceNorm2D":
+        return (
+          <>
+            <label>Num Features</label>
+            <input type="number" value={p.num_features}
+              onChange={e => handleChange("num_features", Number(e.target.value))} />
+          </>
+        );
+      case "GroupNorm":
+        return (
+          <>
+            <label>Num Groups</label>
+            <input type="number" value={p.num_groups}
+              onChange={e => handleChange("num_groups", Number(e.target.value))} />
+            <label>Num Channels</label>
+            <input type="number" value={p.num_channels}
+              onChange={e => handleChange("num_channels", Number(e.target.value))} />
+          </>
+        );
+      case "Dropout":
+        return (
+          <>
+            <label>Probability (p)</label>
+            <input type="number" step="0.01" value={p.p}
+              onChange={e => handleChange("p", Number(e.target.value))} />
+          </>
+        );
+      case "PixelShuffle": {
+        const valid = validUpscaleFactors(p.in_features).filter(r => r !== 1);
+
+        return (
+          <>
+            <label>Upscale Factor</label>
+            <select
+              value={p.upscale_factor}
+              onChange={e => {
+                const r = Number(e.target.value);
+
+                const newParams = {
+                  ...p,
+                  upscale_factor: r,
+                  out_features: p.in_features / (r * r),
+                };
+
+                onUpdate(index, { ...layer, params: newParams });
+              }}
+            >
+              {valid.map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </>
+        );
+      }
 
       default:
         return <em className="no-params">No editable params</em>;
@@ -169,122 +382,52 @@ function Editor() {
   const [layers, setLayers] = useState([]);
   const [activeTab, setActiveTab] = useState("layers"); // 'layers' | 'activations' | 'normalizations'
 
-  /*
   const pushLayer = (type) => {
-    const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
-    setLayers(prev => [...prev, { type, params: template }]);
+    const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {
+      in_features: 1, out_features: 1
     };
-  
-  const updateLayer = (idx, newLayer) => setLayers(prev => prev.map((l, i) => (i === idx ? newLayer : l)));
-  */
- /*
-  const pushLayer = (type) => {
-    const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
-    
-    // Автоматическая коррекция входов
     setLayers(prev => {
       const newLayer = { type, params: template };
-
-      if (prev.length > 0) {
-        const lastLayer = prev[prev.length - 1];
-
-        // Если оба Linear, синхронизируем in_features
-        if (type === "Linear" && lastLayer.type === "Linear") {
-          newLayer.params.in_features = lastLayer.params.out_features;
-        }
-
-        // Если оба Conv2D, синхронизируем in_channels
-        if (type === "Conv2D" && lastLayer.type === "Conv2D") {
-          newLayer.params.in_channels = lastLayer.params.out_channels;
-        }
-      }
-
-      return [...prev, newLayer];
+      return propagateChannels([...prev, newLayer]);
     });
   };
+
+  const LayersThatDontChangeChannels = (layer) => {
+    const types = ["ReLU", "LeakyReLU", "PReLU", "Sigmoid", "Tanh", "Softmax",
+      "BatchNorm1d", "BatchNorm2d", "LayerNorm", "InstanceNorm1D", "InstanceNorm2D",
+      "GroupNorm", "Dropout"];
+    return types.includes(layer.type);
+  }
+
+  function propagateChannels(layers) {
+    return layers.map((layer, i) => {
+      if (i === 0) return layer;
+      return {
+        ...layer,
+        params: {
+          ...layer.params,
+          in_features: layers[i - 1].params.out_features,
+          out_features: LayersThatDontChangeChannels(layer)
+            ? layers[i - 1].params.out_features
+            : layer.params.out_features
+        }
+      };
+    });
+  }
 
   const updateLayer = (idx, newLayer) => {
     setLayers(prev => {
-      const updated = prev.map((l, i) => (i === idx ? newLayer : l));
-
-      // Авто-связка с предыдущим слоем
-      if (idx > 0) {
-        const prevLayer = updated[idx - 1];
-
-        if (newLayer.type === "Linear" && prevLayer.type === "Linear") {
-          newLayer.params.in_features = prevLayer.params.out_features;
-        }
-
-        if (newLayer.type === "Conv2D" && prevLayer.type === "Conv2D") {
-          newLayer.params.in_channels = prevLayer.params.out_channels;
-        }
-      }
-
-      // Авто-связка с последующим слоем (если он Linear/Conv2D)
-      if (idx < updated.length - 1) {
-        const nextLayer = updated[idx + 1];
-        if (nextLayer.type === "Linear" && newLayer.type === "Linear") {
-          nextLayer.params.in_features = newLayer.params.out_features;
-        }
-        if (nextLayer.type === "Conv2D" && newLayer.type === "Conv2D") {
-          nextLayer.params.in_channels = newLayer.params.out_channels;
-        }
-      }
-
-      return updated;
+      const updated = prev.map((l, i) => i === idx ? newLayer : l);
+      return propagateChannels(updated);
     });
   };
-*/
-  const isDataLayer = (type) => ["Linear", "Conv2D"].includes(type);
 
-  const pushLayer = (type) => {
-    const template = LAYER_TEMPLATES[type] ? JSON.parse(JSON.stringify(LAYER_TEMPLATES[type])) : {};
+  const deleteLayer = (idx) => {
     setLayers(prev => {
-      const newLayer = { type, params: template };
-
-      // Авто-связка с последним Data Layer
-      for (let i = prev.length - 1; i >= 0; i--) {
-        if (isDataLayer(prev[i].type)) {
-          if (type === "Linear" && prev[i].type === "Linear") {
-            newLayer.params.in_features = prev[i].params.out_features;
-          }
-          if ((type === "Conv2D" || type === "DSConv2D") && (prev[i].type === "Conv2D" || prev[i].type === "DSConv2D")) {
-            newLayer.params.in_channels = prev[i].params.out_channels;
-          }
-          break;
-        }
-      }
-
-      return [...prev, newLayer];
+      const updated = prev.filter((_, i) => i !== idx);
+      return propagateChannels(updated);
     });
   };
-
-  const updateLayer = (idx, newLayer) => {
-    setLayers(prev => {
-      const updated = prev.map((l, i) => (i === idx ? newLayer : l));
-
-      // Авто-связка: пройтись вперёд и обновить все следующие Data Layer
-      let lastOutLinear = null;
-      let lastOutConv = null;
-      for (let i = 0; i < updated.length; i++) {
-        const l = updated[i];
-
-        if (l.type === "Linear") {
-          if (lastOutLinear !== null) l.params.in_features = lastOutLinear;
-          lastOutLinear = l.params.out_features;
-        }
-
-        if (l.type === "Conv2D" || l.type === "DSConv2D") {
-          if (lastOutConv !== null) l.params.in_channels = lastOutConv;
-          lastOutConv = l.params.out_channels;
-        }
-      }
-
-      return updated;
-    });
-  };
-
-  const deleteLayer = (idx) => setLayers(prev => prev.filter((_, i) => i !== idx));
 
   const exportJSON = () => {
     const json = JSON.stringify(layers, null, 2);
@@ -338,6 +481,14 @@ function Editor() {
             <button className="btn btn-primary" onClick={() => pushLayer("Linear")}>Add Linear</button>
             <button className="btn btn-primary" onClick={() => pushLayer("Conv2D")}>Add Conv2D</button>
             <button className="btn btn-primary" onClick={() => pushLayer("DSConv2D")}>Add Depthwise Separable Conv2D</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Conv2DTranspose")}>Add Conv2DTranspose</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Upsample")}>Add Upsample</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("MaxPool2D")}>Add MaxPool2D</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("AvgPool2D")}>Add AvgPool2D</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("ConvolutionalAttention")}>Add Convolutional Attention</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("SEBlock")}>Add SE Block</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("ResidualBlock")}>Add Residual Block</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("PixelShuffle")}>Add PixelShuffle</button>
           </>
         );
       case "activations":
@@ -357,6 +508,10 @@ function Editor() {
             <button className="btn btn-primary" onClick={() => pushLayer("BatchNorm1d")}>Add BatchNorm1d</button>
             <button className="btn btn-primary" onClick={() => pushLayer("BatchNorm2d")}>Add BatchNorm2d</button>
             <button className="btn btn-primary" onClick={() => pushLayer("LayerNorm")}>Add LayerNorm</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("InstanceNorm1D")}>Add InstanceNorm1D</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("InstanceNorm2D")}>Add InstanceNorm2D</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("GroupNorm")}>Add GroupNorm</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("Dropout")}>Add Dropout</button>
           </>
         );
       default: return null;
