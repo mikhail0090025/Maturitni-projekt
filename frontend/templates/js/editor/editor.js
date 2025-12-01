@@ -400,19 +400,30 @@ function Editor() {
   }
 
   function propagateChannels(layers) {
-    return layers.map((layer, i) => {
+    console.log("Prev:");
+    console.log(layers);
+    
+    let result = layers.map((layer, i) => {
       if (i === 0) return layer;
+
+      const prev = layers[i - 1].params.out_features;
+
       return {
         ...layer,
         params: {
           ...layer.params,
-          in_features: layers[i - 1].params.out_features,
+          in_features: prev,
           out_features: LayersThatDontChangeChannels(layer)
-            ? layers[i - 1].params.out_features
+            ? prev
             : layer.params.out_features
         }
       };
     });
+
+    console.log("Result:");
+    console.log(result);
+
+    return result
   }
 
   const updateLayer = (idx, newLayer) => {
