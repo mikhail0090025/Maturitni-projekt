@@ -121,11 +121,11 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In features</label>
-            <input type="number" value={p.in_features}
-              onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <input min="0" type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))}/>
 
             <label>Out features</label>
-            <input type="number" value={p.out_features}
+            <input min="0" type="number" value={p.out_features}
               onChange={e => handleChange("out_features", Number(e.target.value))} />
           </>
         );
@@ -134,23 +134,23 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In C</label>
-            <input type="number" value={p.in_features}
+            <input min="0" type="number" value={p.in_features}
               onChange={e => handleChange("in_features", Number(e.target.value))} />
 
             <label>Out C</label>
-            <input type="number" value={p.out_features}
+            <input min="0" type="number" value={p.out_features}
               onChange={e => handleChange("out_features", Number(e.target.value))} />
 
             <label>Kernel</label>
-            <input type="number" value={p.kernel_size}
+            <input min="1" type="number" value={p.kernel_size}
               onChange={e => handleChange("kernel_size", Number(e.target.value))} />
 
             <label>Stride</label>
-            <input type="number" value={p.stride}
+            <input min="1" type="number" value={p.stride}
               onChange={e => handleChange("stride", Number(e.target.value))} />
 
             <label>Pad</label>
-            <input type="number" value={p.padding}
+            <input min="0" type="number" value={p.padding}
               onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
@@ -158,15 +158,15 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In C</label>
-            <input type="number" value={p.in_features} onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <input min="0" type="number" value={p.in_features} onChange={e => handleChange("in_features", Number(e.target.value))} />
             <label>Out C</label>
-            <input type="number" value={p.out_features} onChange={e => handleChange("out_features", Number(e.target.value))} />
+            <input min="0" type="number" value={p.out_features} onChange={e => handleChange("out_features", Number(e.target.value))} />
             <label>Kernel</label>
-            <input type="number" value={p.kernel_size} onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <input min="1" type="number" value={p.kernel_size} onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
-            <input type="number" value={p.stride} onChange={e => handleChange("stride", Number(e.target.value))} />
+            <input min="1" type="number" value={p.stride} onChange={e => handleChange("stride", Number(e.target.value))} />
             <label>Pad</label>
-            <input type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
+            <input min="0" type="number" value={p.padding} onChange={e => handleChange("padding", Number(e.target.value))} />
           </>
         );
       case "LeakyReLU":
@@ -191,22 +191,22 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In C</label>
-            <input type="number" value={p.in_features}
+            <input min="0" type="number" value={p.in_features}
               onChange={e => handleChange("in_features", Number(e.target.value))} />
             <label>Out C</label>
-            <input type="number" value={p.out_features}
+            <input min="0" type="number" value={p.out_features}
               onChange={e => handleChange("out_features", Number(e.target.value))} />
             <label>Kernel</label>
-            <input type="number" value={p.kernel_size}
+            <input min="1" type="number" value={p.kernel_size}
               onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
-            <input type="number" value={p.stride}
+            <input min="1" type="number" value={p.stride}
               onChange={e => handleChange("stride", Number(e.target.value))} />
             <label>Pad</label>
-            <input type="number" value={p.padding}
+            <input min="0" type="number" value={p.padding}
               onChange={e => handleChange("padding", Number(e.target.value))} />
             <label>Scale Factor</label>
-            <input type="number" value={p.scale_factor}
+            <input min="1" type="number" value={p.scale_factor}
               onChange={e => handleChange("scale_factor", Number(e.target.value))} />
           </>
         );
@@ -215,7 +215,7 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>Scale Factor</label>
-            <input type="number" value={p.scale_factor}
+            <input min="1" type="number" value={p.scale_factor}
               onChange={e => handleChange("scale_factor", Number(e.target.value))} />
             <label>Mode</label>
             <input type="text" value={p.mode}
@@ -227,10 +227,10 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>Kernel Size</label>
-            <input type="number" value={p.kernel_size}
+            <input min="1" type="number" value={p.kernel_size}
               onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
-            <input type="number" value={p.stride}
+            <input min="1" type="number" value={p.stride}
               onChange={e => handleChange("stride", Number(e.target.value))} />
           </>
         );
@@ -238,10 +238,10 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>Kernel Size</label>
-            <input type="number" value={p.kernel_size}
+            <input min="1" type="number" value={p.kernel_size}
               onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
-            <input type="number" value={p.stride}
+            <input min="1" type="number" value={p.stride}
               onChange={e => handleChange("stride", Number(e.target.value))} />
           </>
         );
@@ -250,10 +250,10 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In Channels</label>
-            <input type="number" value={p.in_features}
+            <input min="0" type="number" value={p.in_features}
               onChange={e => handleChange("in_features", Number(e.target.value))} />
             <label>Num Heads</label>
-            <input type="number" value={p.num_heads}
+            <input min="1" type="number" value={p.num_heads}
               onChange={e => handleChange("num_heads", Number(e.target.value))} />
           </>
         );
@@ -262,10 +262,10 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In Channels</label>
-            <input type="number" value={p.in_features}
+            <input min="0" type="number" value={p.in_features}
               onChange={e => handleChange("in_features", Number(e.target.value))} />
             <label>Reduction</label>
-            <input type="number" value={p.reduction}
+            <input min="1" type="number" value={p.reduction}
               onChange={e => handleChange("reduction", Number(e.target.value))} />
           </>
         );
@@ -273,22 +273,22 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>In Channels</label>
-            <input type="number" value={p.in_features}
+            <input min="0" type="number" value={p.in_features}
               onChange={e => handleChange("in_features", Number(e.target.value))} />
             <label>Out Channels</label>
-            <input type="number" value={p.out_features}
+            <input min="0" type="number" value={p.out_features}
               onChange={e => handleChange("out_features", Number(e.target.value))} />
             <label>Kernel Size</label>
-            <input type="number" value={p.kernel_size}
+            <input min="1" type="number" value={p.kernel_size}
               onChange={e => handleChange("kernel_size", Number(e.target.value))} />
             <label>Stride</label>
-            <input type="number" value={p.stride}
+            <input min="1" type="number" value={p.stride}
               onChange={e => handleChange("stride", Number(e.target.value))} />
             <label>Padding</label>
-            <input type="number" value={p.padding}
+            <input min="0" type="number" value={p.padding}
               onChange={e => handleChange("padding", Number(e.target.value))} />
             <label>Depth</label>
-            <input type="number" value={p.depth}
+            <input min="1" type="number" value={p.depth}
               onChange={e => handleChange("depth", Number(e.target.value))} />
           </>
         );
@@ -306,10 +306,10 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>Num Groups</label>
-            <input type="number" value={p.num_groups}
+            <input min="1" type="number" value={p.num_groups}
               onChange={e => handleChange("num_groups", Number(e.target.value))} />
             <label>Num Channels</label>
-            <input type="number" value={p.num_channels}
+            <input min="1" type="number" value={p.num_channels}
               onChange={e => handleChange("num_channels", Number(e.target.value))} />
           </>
         );
@@ -317,7 +317,7 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
         return (
           <>
             <label>Probability (p)</label>
-            <input type="number" step="0.01" value={p.p}
+            <input min="0" type="number" step="0.01" value={p.p}
               onChange={e => handleChange("p", Number(e.target.value))} />
           </>
         );
