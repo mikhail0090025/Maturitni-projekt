@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 /datasets_manager/datasets
 /projects_manager/projects
+/media
+anim.py
