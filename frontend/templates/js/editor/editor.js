@@ -400,6 +400,16 @@ function Editor() {
     return types.includes(layer.type);
   }
 
+  const ActivationLayers = (layer) => {
+    const types = ["ReLU", "LeakyReLU", "PReLU", "Sigmoid", "Tanh", "Softmax"];
+    return types.includes(layer.type);
+  }
+
+  const LastLayerIsActivation = (layers) => {
+    if (layers.length === 0) return false;
+    return ActivationLayers(layers[layers.length - 1]);
+  }
+
   function propagateChannels(layers) {
     console.log("Prev:");
     console.log(layers);
@@ -422,6 +432,8 @@ function Editor() {
     });
 
     for (let iterator = 0; iterator < 10; iterator++) {
+    
+    for (let iterator = 0; iterator < result.length; iterator++) {
       for (let i = 1; i < result.length; i++) {
         result[i] = {
           ...result[i],
@@ -518,12 +530,12 @@ function Editor() {
       case "activations":
         return (
           <>
-            <button className="btn btn-primary" onClick={() => pushLayer("ReLU")}>Add ReLU</button>
-            <button className="btn btn-primary" onClick={() => pushLayer("LeakyReLU")}>Add LeakyReLU</button>
-            <button className="btn btn-primary" onClick={() => pushLayer("PReLU")}>Add PReLU</button>
-            <button className="btn btn-primary" onClick={() => pushLayer("Sigmoid")}>Add Sigmoid</button>
-            <button className="btn btn-primary" onClick={() => pushLayer("Tanh")}>Add Tanh</button>
-            <button className="btn btn-primary" onClick={() => pushLayer("Softmax")}>Add Softmax</button>
+            <button className="btn btn-primary" disabled={LastLayerIsActivation(layers)} onClick={() => pushLayer("ReLU")}>Add ReLU</button>
+            <button className="btn btn-primary" disabled={LastLayerIsActivation(layers)} onClick={() => pushLayer("LeakyReLU")}>Add LeakyReLU</button>
+            <button className="btn btn-primary" disabled={LastLayerIsActivation(layers)} onClick={() => pushLayer("PReLU")}>Add PReLU</button>
+            <button className="btn btn-primary" disabled={LastLayerIsActivation(layers)} onClick={() => pushLayer("Sigmoid")}>Add Sigmoid</button>
+            <button className="btn btn-primary" disabled={LastLayerIsActivation(layers)} onClick={() => pushLayer("Tanh")}>Add Tanh</button>
+            <button className="btn btn-primary" disabled={LastLayerIsActivation(layers)} onClick={() => pushLayer("Softmax")}>Add Softmax</button>
           </>
         );
       case "normalizations":
