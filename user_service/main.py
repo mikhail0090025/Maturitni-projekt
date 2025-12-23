@@ -226,7 +226,7 @@ async def login_user(request: Request):
             value=session_id,
             httponly=True,
             secure=(os.getenv("ENV") == "production"),
-            max_age=3600,
+            max_age=3600*24,
             path="/"
         )
         return response

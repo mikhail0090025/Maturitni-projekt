@@ -432,16 +432,16 @@ function Editor() {
     });
 
     for (let iterator = 0; iterator < 10; iterator++) {
-    
-    for (let iterator = 0; iterator < result.length; iterator++) {
-      for (let i = 1; i < result.length; i++) {
-        result[i] = {
-          ...result[i],
-          params: {
-            ...result[i].params,
-            in_features: result[i - 1].params.out_features
-          }
-        };
+      for (let iterator = 0; iterator < result.length; iterator++) {
+        for (let i = 1; i < result.length; i++) {
+          result[i] = {
+            ...result[i],
+            params: {
+              ...result[i].params,
+              in_features: result[i - 1].params.out_features
+            }
+          };
+        }
       }
     }
 

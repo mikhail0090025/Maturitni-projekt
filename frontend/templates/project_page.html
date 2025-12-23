@@ -18,12 +18,29 @@
         <h1>{{ project_data.name }}</h1><br>
         <!-- <h4>{{ project_data.description }}</h4> -->
     </div>
-    <div class="settings-block">
-        {% include "editor/input_settings.html" %}
-    </div>
+    <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
+    <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
+    <input type="hidden" id="project-id" value="{{ project_data.id }}">
+    <div class="project-dataset">
+        <label>Dataset:</label>
+        <select name="dataset-for-project-select" id="dataset-for-project-select">
+            {% for dataset in datasets %}
+                <option value="{{ dataset.id }}"
+                    {% if project_data.dataset and dataset.id == project_data.dataset.id %}
+                        selected
+                    {% endif %}
+                >
+                    {{ dataset.name }} ({{ dataset.dataset_type }})
+                </option>
+            {% endfor %}
+        </select>
+        <div class="settings-block">
+            {% include "editor/input_settings.html" %}
+        </div>
 
-    <div class="settings-block">
-        {% include "editor/output_settings.html" %}
+        <div class="settings-block">
+            {% include "editor/output_settings.html" %}
+        </div>
     </div>
     <div id="editor-block">
         <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
@@ -39,4 +56,5 @@
 <div id="layers-block"></div>
 <script type="text/babel" src="/js/editor/editor.js"></script>
 <script type="text/babel" src="/js/editor/input_settings.js"></script>
+<script src="/js/editor/dataset_settings_save.js"></script>
 {% endblock %}

@@ -84,6 +84,8 @@ class ProjectCreate(BaseModel):
     owner_username: str
     input_type: DataType
     output_type: DataType
+    dataset_id: Optional[int] = None
+    dataset_preprocess_json: Optional[str] = None
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -92,6 +94,8 @@ class ProjectUpdate(BaseModel):
     input_type: Optional[DataType] = None
     output_type: Optional[DataType] = None
     project_json: Optional[str] = None
+    dataset_id: Optional[int] = None
+    dataset_preprocess_json: Optional[str] = None
 
 
 # --- Endpoints ---
@@ -103,6 +107,8 @@ def create_project(project: ProjectCreate):
         owner_username=project.owner_username,
         input_type=project.input_type,
         output_type=project.output_type,
+        architecture_json=project.dataset_preprocess_json,
+        dataset_id=project.dataset_id
     )
     return {
         "id": new_project.id,
@@ -112,6 +118,9 @@ def create_project(project: ProjectCreate):
         "input_type": new_project.input_type.value,
         "output_type": new_project.output_type.value,
         "created_at": str(new_project.created_at),
+        "project_json": new_project.architecture_json,
+        "dataset_id": new_project.dataset_id,
+        "dataset_preprocess_json": new_project.dataset_preprocess_json
     }
 
 @projects_router.get("/{project_id}", response_model=dict)
@@ -130,7 +139,9 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         new_owner_username=updates.owner_username,
         new_input_type=updates.input_type,
         new_output_type=updates.output_type,
-        new_architecture_json=updates.project_json
+        new_architecture_json=updates.project_json,
+        new_dataset_id=updates.dataset_id,
+        new_dataset_preprocess_json=updates.dataset_preprocess_json
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -142,7 +153,9 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         "input_type": updated.input_type.value,
         "output_type": updated.output_type.value,
         "created_at": str(updated.created_at),
-        "project_json": updated.architecture_json
+        "project_json": updated.architecture_json,
+        "dataset_id": updated.dataset_id,
+        "dataset_preprocess_json": updated.dataset_preprocess_json
     }
 
 @projects_router.delete("/{project_id}", response_model=dict)

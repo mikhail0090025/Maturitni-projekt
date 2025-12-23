@@ -36,7 +36,10 @@ class Project(Base):
     input_type = Column(EnumType(DataType), nullable=False)
     output_type = Column(EnumType(DataType), nullable=False)
     architecture_json = Column(Text(), nullable=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=True)
+    dataset_preprocess_json = Column(Text(), nullable=True)
 
+    dataset = relationship("Dataset")
     owner = relationship("User", back_populates="projects")
 
 class Dataset(Base):

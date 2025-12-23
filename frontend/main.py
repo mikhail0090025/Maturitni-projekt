@@ -260,7 +260,24 @@ def get_project(project_id: int, request: Request):
         return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "You are not the owner of this project!"})
     data = project_response.json()
 
-    return templates.TemplateResponse("project_page.html", {"request": request, "project_data": data})
+    datasets_response = requests.get("http://db_service:8002/datasets")
+    if datasets_response.status_code >= 400:
+        return templates.TemplateResponse("error_page.html", {"request": request, "error_message": f"Failed to fetch datasets: {datasets_response.text}"})
+    datasets = datasets_response.json()
+    print("Datasets:")
+    print(datasets)
+    for dataset in datasets:
+        dataset_type_info = requests.get(f"http://datasets_manager:8004/datasets/dataset_type_name/{dataset['dataset_type']}")
+        if dataset_type_info.status_code == 200:
+            dataset['dataset_type_description'] = dataset_type_info.json().get('description', 'No description available')
+        else:
+            dataset['dataset_type_description'] = 'No description available'
+
+    from datetime import datetime
+    for dataset in datasets:
+        dataset['created_at'] = datetime.fromisoformat(dataset['created_at']).strftime('%Y-%m-%d %H:%M:%S')
+
+    return templates.TemplateResponse("project_page.html", {"request": request, "project_data": data, "datasets": datasets})
 
 @app.post("/projects/save")
 async def update_project(request: Request):
@@ -434,6 +451,103 @@ async def upload_zip(
     print("Response from Datasets manager:", r.content)
 
     return JSONResponse(content=r.json(), status_code=r.status_code)
+
+# Other endpoints
+
+@app.post("/save_dataset_settings")
+async def save_dataset_settings(request: Request):
+
+    body = await request.json()
+    dataset_id = body["dataset_id"]
+    project_id = body["project_id"]
+    dataset_preprocess_json = body["preprocessing_config"]
+    print("Dataset ID received:", dataset_id)
+    print("Project ID received:", project_id)
+    print("Dataset preprocess JSON received:", dataset_preprocess_json)
+
+    project_response = requests.get(f'http://projects_manager:8003/{project_id}')
+    if project_response.status_code >= 400:
+        return JSONResponse(content={'error': f'Couldnt get project with id {project_id}'})
+    user_response = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if user_response.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+    user_data = user_response.json()
+    if user_data['username'] != project_response.json().get('owner_username'):
+        return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "You are not the owner of this project!"})
+    data = project_response.json()
+
+    project_update_response = requests.put(
+        f'http://projects_manager:8003/{project_id}',
+        json={
+            "name": data['name'],
+            "description": data.get('description', ''),
+            "owner_username": data['owner_username'],
+            "input_type": data['input_type'],
+            "output_type": data['output_type'],
+            "dataset_id": dataset_id,
+            "dataset_preprocess_json": dataset_preprocess_json,
+        }
+    )
+    sentData = {
+        "name": data['name'],
+        "description": data.get('description', ''),
+        "owner_username": data['owner_username'],
+        "input_type": data['input_type'],
+        "output_type": data['output_type'],
+        "dataset_id": dataset_id,
+        "dataset_preprocess_json": dataset_preprocess_json,
+    }
+    print("Sent data for project update:", sentData)
+    if project_update_response.status_code >= 400:
+        return JSONResponse(content={"error_message": f"Failed to save project data!: {project_update_response.text}"}, status_code=project_update_response.status_code)
+
+    return JSONResponse(content={"detail": "Project saved successfully"}, status_code=200)
+
+@app.get("/load_dataset_settings/{project_id}")
+async def load_dataset_settings(project_id: int, request: Request):
+
+    # 1. Проверка пользователя
+    user_response = requests.get(
+        "http://user_service:8000/me",
+        cookies=request.cookies
+    )
+    if user_response.status_code >= 400:
+        return RedirectResponse(url="/login_page")
+
+    user_data = user_response.json()
+
+    # 2. Получаем проект
+    project_response = requests.get(
+        f"http://projects_manager:8003/{project_id}"
+    )
+    if project_response.status_code >= 400:
+        return JSONResponse(
+            content={"error": f"Could not get project with id {project_id}"},
+            status_code=404
+        )
+
+    project_data = project_response.json()
+
+    # 3. Проверка владельца
+    if project_data.get("owner_username") != user_data["username"]:
+        return JSONResponse(
+            content={"error": "You are not the owner of this project"},
+            status_code=403
+        )
+
+    # 4. Возвращаем ТОЛЬКО нужное
+    return JSONResponse(
+        content={
+            "dataset_id": project_data.get("dataset_id"),
+            "dataset_preprocess_json": project_data.get("dataset_preprocess_json", "")
+        },
+        status_code=200
+    )
+
+# --- Health Check ---
 
 @app.get("/health", tags=["health"])
 async def health_check():

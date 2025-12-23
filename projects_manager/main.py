@@ -25,6 +25,9 @@ class ProjectCreate(BaseModel):
     owner_username: str
     input_type: str
     output_type: str
+    project_json: Optional[str] = None
+    dataset_id: Optional[int] = None
+    dataset_preprocess_json: Optional[str] = None
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -33,6 +36,8 @@ class ProjectUpdate(BaseModel):
     input_type: Optional[str] = None
     output_type: Optional[str] = None
     project_json: Optional[str] = None
+    dataset_id: Optional[int] = None
+    dataset_preprocess_json: Optional[str] = None
 
 # --- Endpoints ---
 @app.post("/", response_model=dict)
