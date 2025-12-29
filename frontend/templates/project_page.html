@@ -5,6 +5,7 @@
 {% block head %}
 <link rel="stylesheet" href="/styles/editor/editor.css">
 <link rel="stylesheet" href="/styles/editor/input_settings.css">
+<link rel="stylesheet" href="/styles/editor/scheduler.css">
 
 <!-- React / ReactDOM / Babel (для быстрого прототипа) -->
 <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -48,6 +49,14 @@
         </div>
         <button class="btn btn-primary" onclick="prepareDataset()">Prepare Dataset</button>
     </div>
+    <div id="optimizer-and-scheduler-block">
+        <div id="optimizer-block">
+            {% include "editor/optimizer_settings.html" %}
+        </div>
+        <div id="scheduler-block">
+            {% include "editor/scheduler_settings.html" %}
+        </div>
+    </div>
     <div id="editor-block">
         <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
             <button class="btn btn-primary">Download file</button>
@@ -64,4 +73,5 @@
 <script type="text/babel" src="/js/editor/input_settings.js"></script>
 <script src="/js/editor/dataset_settings_save.js"></script>
 <script src="/js/editor/shapes.js"></script>
+<script src="/js/editor/scheduler.js"></script>
 {% endblock %}
