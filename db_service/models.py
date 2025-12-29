@@ -6,10 +6,9 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 class DataType(Enum):
-    NOISE = "noise"
+    # NOISE = "noise"
     IMAGE = "image"
     VECTOR = "vector"
-    BINARY = "binary"
 
 class User(Base):
     __tablename__ = "users"

@@ -45,18 +45,6 @@
                    class="small-input" min="1" step="1" value="128">
         </div>
 
-        {% elif project_data.output_type == 'binary' %}
-        <div class="group">
-            <label for="output-binary-size">Binary array size:</label>
-            <input type="number" id="output-binary-size"
-                   class="small-input" min="1" step="1" value="1">
-        </div>
-
-        {% elif project_data.output_type == 'noise' %}
-        <div class="group">
-            <p>No special output settings for noise.</p>
-        </div>
-
         {% else %}
         <p>Unknown output type: {{ project_data.output_type }}</p>
         {% endif %}

@@ -15,7 +15,8 @@ const LAYER_TEMPLATES = {
   BatchNorm2d: { in_features: 1, out_features: 8 },
   LayerNorm: { in_features: 1, out_features: 8 },
 
-  Conv2DTranspose: { in_features: 1, out_features: 8, kernel_size: 3, stride: 1, padding: 1, scale_factor: 2 },
+  Conv2DTranspose: { in_features: 1, out_features: 8, kernel_size: 2, stride: 1, padding: 0, scale_factor: 2 },
+  UpscaleBlock: { in_features: 1, out_features: 8, scale_factor: 2, mode: "nearest", kernel_size: 3, padding: 1 },
   Upsample: { in_features: 1, out_features: 8, scale_factor: 2, mode: "nearest" },
   MaxPool2D: { in_features: 1, out_features: 8, kernel_size: 2, stride: 2 },
   AvgPool2D: { in_features: 1, out_features: 8, kernel_size: 2, stride: 2 },
@@ -105,7 +106,7 @@ function validUpscaleFactors(inChannels) {
   return factors;
 }
 
-function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }) {
+function LayerCard({ layer, index, shape, onUpdate, onDelete, moveUp, moveDown, total }) {
   const p = layer.params || {};
 
   const handleChange = (key, val) => {
@@ -222,7 +223,30 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
               onChange={e => handleChange("mode", e.target.value)} />
           </>
         );
-
+      
+      case "UpscaleBlock":
+        return (
+          <>
+            <label>In C</label>
+            <input min="0" type="number" value={p.in_features}
+              onChange={e => handleChange("in_features", Number(e.target.value))} />
+            <label>Out C</label>
+            <input min="0" type="number" value={p.out_features}
+              onChange={e => handleChange("out_features", Number(e.target.value))} />
+            <label>Scale Factor</label>
+            <input min="1" type="number" value={p.scale_factor}
+              onChange={e => handleChange("scale_factor", Number(e.target.value))} />
+            <label>Kernel Size</label>
+            <input min="1" type="number" value={p.kernel_size}
+              onChange={e => handleChange("kernel_size", Number(e.target.value))} />
+            <label>Padding</label>
+            <input min="0" type="number" value={p.padding}
+              onChange={e => handleChange("padding", Number(e.target.value))} />
+            <label>Mode</label>
+            <input type="text" value={p.mode}
+              onChange={e => handleChange("mode", e.target.value)} />
+          </>
+        );
       case "MaxPool2D":
         return (
           <>
@@ -360,6 +384,11 @@ function LayerCard({ layer, index, onUpdate, onDelete, moveUp, moveDown, total }
       <div className="layer-header">
         <div>
           <strong>{index + 1}. {layer.type}</strong>
+          {shape && (
+            <div className="tensor-shape">
+              📐 {shape.kind}: {shape.shape.join(" × ")}
+            </div>
+          )}
           <div className="param-count">
             🧮 Params: <strong>{paramCount.toLocaleString()}</strong>
           </div>
@@ -396,7 +425,7 @@ function Editor() {
   const LayersThatDontChangeChannels = (layer) => {
     const types = ["ReLU", "LeakyReLU", "PReLU", "Sigmoid", "Tanh", "Softmax",
       "BatchNorm1d", "BatchNorm2d", "LayerNorm", "InstanceNorm1D", "InstanceNorm2D",
-      "GroupNorm", "Dropout"];
+      "GroupNorm", "Dropout", "SEBlock", "ConvolutionalAttention"];
     return types.includes(layer.type);
   }
 
@@ -409,6 +438,14 @@ function Editor() {
     if (layers.length === 0) return false;
     return ActivationLayers(layers[layers.length - 1]);
   }
+
+  const shapes = React.useMemo(() => {
+    try {
+      return computeTensorShapes(layers);
+    } catch (e) {
+      return null;
+    }
+  }, [layers]);
 
   function propagateChannels(layers) {
     console.log("Prev:");
@@ -489,6 +526,20 @@ function Editor() {
     }
   }, []);
 
+  useEffect(() => {
+    if (layers.length === 0) return;
+    try {
+      const shapes = computeTensorShapes(layers);
+      console.group("📐 Tensor shapes");
+      shapes.forEach(s => {
+        console.log(s.layer, "→", s.shape.shape.join("×"));
+      });
+      console.groupEnd();
+    } catch (e) {
+      console.error("Shape propagation error:", e);
+    }
+  }, [layers]);
+
   const SaveJSON = () => {
     const json = JSON.stringify(layers, null, 2);
     console.log("Model JSON:", json);
@@ -508,6 +559,15 @@ function Editor() {
     })
   };
 
+  const currentOutputShape = shapes ? shapes[shapes.length - 1].shape : null;
+
+  useEffect(() => {
+    const outputShapeInput = document.getElementById('output-shape-value-current');
+    if (outputShapeInput) {
+      outputShapeInput.textContent = currentOutputShape ? (". Current: (" + currentOutputShape.shape.join(", ") + ")") : "—";
+    }
+  }, [currentOutputShape]);
+
   // Вкладки слева
   const tabContent = () => {
     switch(activeTab) {
@@ -519,6 +579,7 @@ function Editor() {
             <button className="btn btn-primary" onClick={() => pushLayer("DSConv2D")}>Add Depthwise Separable Conv2D</button>
             <button className="btn btn-primary" onClick={() => pushLayer("Conv2DTranspose")}>Add Conv2DTranspose</button>
             <button className="btn btn-primary" onClick={() => pushLayer("Upsample")}>Add Upsample</button>
+            <button className="btn btn-primary" onClick={() => pushLayer("UpscaleBlock")}>Add UpscaleBlock</button>
             <button className="btn btn-primary" onClick={() => pushLayer("MaxPool2D")}>Add MaxPool2D</button>
             <button className="btn btn-primary" onClick={() => pushLayer("AvgPool2D")}>Add AvgPool2D</button>
             <button className="btn btn-primary" onClick={() => pushLayer("ConvolutionalAttention")}>Add Convolutional Attention</button>
@@ -579,6 +640,7 @@ function Editor() {
             layer={layer}
             index={idx}
             total={layers.length}
+            shape={shapes ? shapes[idx + 1]?.shape : null}
             onUpdate={updateLayer}
             onDelete={deleteLayer}
             moveUp={(i)=> {/*...*/}}
@@ -588,6 +650,165 @@ function Editor() {
       </div>
     </div>
   );
+}
+
+let project_data = {};
+project_data.input_type = document.getElementById("input-type").value;
+
+function getInputTensorShape() {
+  // предполагаем, что project_data доступен глобально
+  if (project_data.input_type === "vector") {
+    const n = Number(document.getElementById("input-vector-size")?.value || 0);
+    return { kind: "vector", shape: [n] };
+  }
+
+  if (project_data.input_type === "image") {
+    const w = Number(document.getElementById("width-image-input").value);
+    const h = Number(document.getElementById("height-image-input").value);
+    const mode = document.getElementById("select-input-image-type").value;
+
+    const c = mode === "rgb" ? 3 : mode === "cmyk" ? 4 : 1;
+    return { kind: "image", shape: [c, h, w] };
+  }
+
+  throw new Error("Unknown input type");
+}
+
+function applyLayerToShape(input, layer) {
+  const p = layer.params || {};
+  const { kind, shape } = input;
+
+  switch (layer.type) {
+
+    /* ===== LINEAR ===== */
+
+    case "Linear":
+      if (kind === "vector") {
+        return { kind: "vector", shape: [p.out_features] };
+      }
+
+      // Linear как pointwise (1x1 Conv)
+      if (kind === "image") {
+        const [C, H, W] = shape;
+        return { kind: "image", shape: [p.out_features, H, W] };
+      }
+
+      break;
+
+    /* ===== CONVS ===== */
+
+    case "Conv2D":
+    case "DSConv2D": {
+      const [C, H, W] = shape;
+      const { kernel_size, stride = 1, padding = 0, out_features } = p;
+
+      const Hout = Math.floor((H + 2 * padding - kernel_size) / stride + 1);
+      const Wout = Math.floor((W + 2 * padding - kernel_size) / stride + 1);
+      
+      return { kind: "image", shape: [out_features, Hout, Wout] };
+    }
+
+    case "Conv2DTranspose": {
+      const [C, H, W] = shape;
+      const { kernel_size, stride = 1, padding = 0, out_features } = p;
+      
+      const Hout = (H - 1) * stride - 2 * padding + kernel_size;
+      const Wout = (W - 1) * stride - 2 * padding + kernel_size;
+      
+      return { kind: "image", shape: [out_features, Hout, Wout] };
+    }
+    case "ResidualBlock": {
+      const [C, H, W] = shape;
+      const { kernel_size, stride = 1, padding = 0, out_features } = p;
+
+      const Hout = Math.floor((H + 2 * padding - kernel_size) / stride + 1);
+      const Wout = Math.floor((W + 2 * padding - kernel_size) / stride + 1);
+
+      return { kind: "image", shape: [out_features, Hout, Wout] };
+    }
+
+    /* ===== POOLING ===== */
+
+    case "MaxPool2D":
+    case "AvgPool2D": {
+      const [C, H, W] = shape;
+      const { stride } = p;
+
+      return {
+        kind: "image",
+        shape: [C, Math.floor(H / stride), Math.floor(W / stride)],
+      };
+    }
+
+    /* ===== UPSAMPLE ===== */
+
+    case "Upsample": {
+      const [C, H, W] = shape;
+      return {
+        kind: "image",
+        shape: [C, H * p.scale_factor, W * p.scale_factor],
+      };
+    }
+
+    case "UpscaleBlock": {
+      const [C, H, W] = shape;
+      const r = p.scale_factor;
+      return {
+        kind: "image",
+        shape: [p.out_features, H * r, W * r],
+      };
+    }
+
+    case "PixelShuffle": {
+      const [C, H, W] = shape;
+      const r = p.upscale_factor;
+
+      return {
+        kind: "image",
+        shape: [C / (r * r), H * r, W * r],
+      };
+    }
+
+    /* ===== SHAPE-INVARIANT ===== */
+
+    case "ReLU":
+    case "LeakyReLU":
+    case "PReLU":
+    case "Sigmoid":
+    case "Tanh":
+    case "Softmax":
+    case "BatchNorm1d":
+    case "BatchNorm2d":
+    case "LayerNorm":
+    case "InstanceNorm1D":
+    case "InstanceNorm2D":
+    case "GroupNorm":
+    case "Dropout":
+    case "SEBlock":
+    case "ConvolutionalAttention":
+      return input;
+
+    default:
+      console.warn("Shape propagation not implemented for", layer.type);
+      return input;
+  }
+}
+
+function computeTensorShapes(layers) {
+  const shapes = [];
+
+  let current = getInputTensorShape();
+  shapes.push({ layer: "INPUT", shape: current });
+
+  for (let i = 0; i < layers.length; i++) {
+    current = applyLayerToShape(current, layers[i]);
+    shapes.push({
+      layer: `${i + 1}. ${layers[i].type}`,
+      shape: current,
+    });
+  }
+
+  return shapes;
 }
 
 // mount React into the existing #layers-block element — robust version

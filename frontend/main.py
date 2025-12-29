@@ -547,6 +547,13 @@ async def load_dataset_settings(project_id: int, request: Request):
         status_code=200
     )
 
+@app.get("/prepare_dataset/{dataset_id}/for_project/{project_id}")
+def prepare_dataset_for_project(request: Request, dataset_id: int, project_id: int):
+    request_ = requests.get(f"http://projects_manager:8003/datasets/prepare_dataset/{dataset_id}/for_project/{project_id}", cookies=request.cookies)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to prepare dataset for project"}, status_code=500)
+    return request_.json()
+
 # --- Health Check ---
 
 @app.get("/health", tags=["health"])

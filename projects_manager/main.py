@@ -7,6 +7,8 @@ from typing import Optional, List
 from data import IndexToDataType, DataTypeToIndex
 import neural_net_manager as nn_manager
 import os
+from datasets import get_dataset
+import datasets_templates as ds_templates
 
 app = FastAPI()
 
@@ -133,6 +135,31 @@ def get_model_file(project_id: int):
     with open(model_path, "rb") as f:
         model_data = f.read()
     return Response(content=model_data, media_type="application/octet-stream")
+
+''' DATASET ENDPOINTS '''
+
+@app.get("/datasets/prepare_dataset/{dataset_id}/for_project/{project_id}")
+def prepare_dataset_for_project(request: Request, dataset_id: int, project_id: int):
+    request_ = requests.get(f"http://localhost:8003/{project_id}", cookies=request.cookies)
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": f"Project not found. ({request_.json()})"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": f"Failed to fetch project. {request_.json()}"}, status_code=500)
+    project = request_.json()
+
+    try:
+        dataset = get_dataset(
+            dataset_id=dataset_id,
+            project_id=project_id,
+            preprocess_json_text=project.get('dataset_preprocess_json', ''),
+            dataset_type=ds_templates.input_output_type_to_dataset_type(
+                project['input_type'], project['output_type'])
+        )
+        return JSONResponse(content={"detail": "Dataset prepared successfully", "num_samples": len(dataset)}, status_code=200)
+    except ValueError as ve:
+        return JSONResponse(content={"error": str(ve)}, status_code=400)
+    except Exception as e:
+        return JSONResponse(content={"error": "Failed to prepare dataset"}, status_code=500)
 
 ''' OTHER ENDPOINTS '''
 

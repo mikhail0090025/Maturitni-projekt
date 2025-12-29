@@ -98,6 +98,7 @@ services:
       - "8003:8003"
     volumes:
       - ./projects_manager/projects:/app/projects
+      - ./projects_manager/temp_datasets:/app/temp_datasets
 
   datasets_manager:
     build: ./datasets_manager

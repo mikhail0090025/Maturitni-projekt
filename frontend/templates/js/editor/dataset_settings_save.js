@@ -147,9 +147,6 @@ function collectPreprocessingConfig(inputType, outputType) {
 function buildAndSendConfig(inputType, outputType) {
     const config = collectPreprocessingConfig(inputType, outputType);
 
-    console.log("Preprocessing config:");
-    console.log(JSON.stringify(config, null, 2));
-
     return config;
 }
 
@@ -167,7 +164,6 @@ function buildConfigFromPage() {
 
     const config = buildAndSendConfig(inputType, outputType);
 
-    console.log("[buildConfigFromPage] done");
     return config;
 }
 
@@ -207,9 +203,6 @@ async function sendDatasetSettingsToBackend() {
         project_id: projectId
     };
 
-    console.log("[sendDatasetSettingsToBackend] payload:");
-    console.log(payload);
-
     try {
         const response = await fetch("http://localhost:8001/save_dataset_settings", {
             method: "POST",
@@ -225,8 +218,6 @@ async function sendDatasetSettingsToBackend() {
         }
 
         const result = await response.json();
-        console.log("[sendDatasetSettingsToBackend] success:", result);
-
     } catch (err) {
         console.error("Request failed:", err);
     }
@@ -256,8 +247,6 @@ async function loadDatasetSettingsFromBackend() {
 
         const data = await response.json();
 
-        console.log("[loadDatasetSettings] received:", data);
-
         const { dataset_id, dataset_preprocess_json } = data;
 
         // 1️⃣ применяем датасет
@@ -275,8 +264,6 @@ async function loadDatasetSettingsFromBackend() {
 
             applyPreprocessingConfigToUI(parsedConfig);
         }
-
-        console.log("[loadDatasetSettings] applied successfully");
 
     } catch (err) {
         console.error("[loadDatasetSettings] request failed:", err);
@@ -297,8 +284,6 @@ function applyDatasetSelection(datasetId) {
     }
 
     select.value = String(datasetId);
-
-    console.log("[applyDatasetSelection] dataset set to:", datasetId);
 }
 
 function applyPreprocessingConfigToUI(config) {
@@ -352,12 +337,12 @@ function applyPreprocessingConfigToUI(config) {
             el("output-binary-size").value = output.basic.size || 1;
         }
     }
-
-    console.log("[applyPreprocessingConfigToUI] config applied to UI");
 }
 
+let dataLoaded = false;
 document.addEventListener("DOMContentLoaded", () => {
     loadDatasetSettingsFromBackend();
+    dataLoaded = true;
     setInterval(() => {
         sendDatasetSettingsToBackend();
     }, 10000); // every 10 seconds

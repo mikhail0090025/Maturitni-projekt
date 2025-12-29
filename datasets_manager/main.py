@@ -287,6 +287,31 @@ def download_dataset(storage_id: str, request: Request):
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": f"Internal server error: {e}"})
 
+@datasets_router.get("/download/id/{dataset_id}")
+def download_dataset_by_id(dataset_id: str, request: Request):
+    try:
+        user_resp = requests.get("http://user_service:8000/me", cookies=request.cookies)
+        if user_resp.status_code >= 400:
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        user_id = user_resp.json()["id"]
+
+        # Получаем датасет по ID
+        db_resp = requests.get(f"http://datasets_manager:8004/datasets/{dataset_id}")
+        if db_resp.status_code != 200:
+            return JSONResponse(status_code=500, content={"detail": "Dataset service unavailable"})
+        dataset = db_resp.json()
+        if dataset["owner_id"] != user_id:
+            return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+
+        file_path = os.path.join("./datasets", f"{dataset['storage_id']}.zip")
+        if not os.path.exists(file_path):
+            return JSONResponse(status_code=404, content={"detail": "File not found"})
+
+        return FileResponse(file_path, filename=f"{dataset['name']}.zip")
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": f"Internal server error: {e}"})
+
 app.include_router(datasets_router)
 app.include_router(upload_router)
 

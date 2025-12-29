@@ -10,6 +10,7 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="/js/editor/functions.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -41,6 +42,11 @@
         <div class="settings-block">
             {% include "editor/output_settings.html" %}
         </div>
+        <div id="tensor-shape-info" class="tensor-shape-info">
+            <p><strong>Input shape:</strong> <span id="input-shape-value">—</span></p>
+            <p><strong>Output shape:</strong> <span id="output-shape-value">—</span><span id="output-shape-value-current">—</span></p>
+        </div>
+        <button class="btn btn-primary" onclick="prepareDataset()">Prepare Dataset</button>
     </div>
     <div id="editor-block">
         <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
@@ -57,4 +63,5 @@
 <script type="text/babel" src="/js/editor/editor.js"></script>
 <script type="text/babel" src="/js/editor/input_settings.js"></script>
 <script src="/js/editor/dataset_settings_save.js"></script>
+<script src="/js/editor/shapes.js"></script>
 {% endblock %}
