@@ -91,14 +91,20 @@ def get_all_users():
 
 """CRUD operations for Project model"""
 
-def insert_project(name, description, owner_username, input_type, output_type):
+def insert_project(name, description, owner_username, input_type, output_type, architecture_json=None, dataset_id=None, dataset_preprocess_json=None, optimizer_json=None, loss_function=None, scheduler_json=None):
     with SessionLocal() as session:
         project = models.Project(
             name=name,
             description=description,
             owner_username=owner_username,
             input_type=input_type,
-            output_type=output_type
+            output_type=output_type,
+            architecture_json=architecture_json,
+            dataset_id=dataset_id,
+            dataset_preprocess_json=dataset_preprocess_json,
+            optimizer_json=optimizer_json,
+            loss_function=loss_function,
+            scheduler_json=scheduler_json
         )
         session.add(project)
         session.commit()
@@ -119,13 +125,17 @@ def get_project(id):
                 "created_at": str(project.created_at),
                 "project_json": project.architecture_json,
                 "dataset_id": project.dataset_id,
-                "dataset_preprocess_json": project.dataset_preprocess_json
+                "dataset_preprocess_json": project.dataset_preprocess_json,
+                "optimizer_json": project.optimizer_json,
+                "loss_function": project.loss_function.value if project.loss_function else None,
+                "scheduler_json": project.scheduler_json
             }
         return None
 
 def update_project(id, new_name=None, new_description=None, new_owner_username=None,
                    new_input_type=None, new_output_type=None, new_architecture_json=None,
-                   new_dataset_id=None, new_dataset_preprocess_json=None):
+                   new_dataset_id=None, new_dataset_preprocess_json=None, new_optimizer_json=None,
+                   new_loss_function=None, new_scheduler_json=None):
     with SessionLocal() as session:
         project = session.query(models.Project).filter_by(id=id).first()
         if not project:
@@ -147,6 +157,12 @@ def update_project(id, new_name=None, new_description=None, new_owner_username=N
             project.dataset_id = new_dataset_id
         if new_dataset_preprocess_json is not None:
             project.dataset_preprocess_json = new_dataset_preprocess_json
+        if new_optimizer_json is not None:
+            project.optimizer_json = new_optimizer_json
+        if new_loss_function is not None:
+            project.loss_function = new_loss_function
+        if new_scheduler_json is not None:
+            project.scheduler_json = new_scheduler_json
 
         session.commit()
         session.refresh(project)
@@ -175,7 +191,10 @@ def get_projects_of_user(owner_username: str):
                 "created_at": str(p.created_at),
                 "project_json": p.architecture_json,
                 "dataset_id": p.dataset_id,
-                "dataset_preprocess_json": p.dataset_preprocess_json
+                "dataset_preprocess_json": p.dataset_preprocess_json,
+                "optimizer_json": p.optimizer_json,
+                "loss_function": p.loss_function.value if p.loss_function else None,
+                "scheduler_json": p.scheduler_json
             } for p in projects
         ]
 
@@ -193,7 +212,10 @@ def get_all_projects():
                 "created_at": str(p.created_at),
                 "project_json": p.architecture_json,
                 "dataset_id": p.dataset_id,
-                "dataset_preprocess_json": p.dataset_preprocess_json
+                "dataset_preprocess_json": p.dataset_preprocess_json,
+                "optimizer_json": p.optimizer_json,
+                "loss_function": p.loss_function.value if p.loss_function else None,
+                "scheduler_json": p.scheduler_json
             } for p in projects
         ]
 

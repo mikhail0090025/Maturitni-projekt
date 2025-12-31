@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log(dataLoaded);
     setTimeout(() => {
         updateTensorShapeInfo();
-    }, 1000);
+    }, 1500);
 
     const container = document.getElementById("dataset-settings");
     if (!container) return;

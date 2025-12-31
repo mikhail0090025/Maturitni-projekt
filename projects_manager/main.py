@@ -30,6 +30,9 @@ class ProjectCreate(BaseModel):
     project_json: Optional[str] = None
     dataset_id: Optional[int] = None
     dataset_preprocess_json: Optional[str] = None
+    optimizer_json: Optional[str] = None
+    scheduler_json: Optional[str] = None
+    loss_function: Optional[str] = None
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -40,6 +43,9 @@ class ProjectUpdate(BaseModel):
     project_json: Optional[str] = None
     dataset_id: Optional[int] = None
     dataset_preprocess_json: Optional[str] = None
+    optimizer_json: Optional[str] = None
+    scheduler_json: Optional[str] = None
+    loss_function: Optional[str] = None
 
 # --- Endpoints ---
 @app.post("/", response_model=dict)
@@ -173,3 +179,23 @@ def data_type_to_index(data_type: str):
         return JSONResponse(content={"error": str(ve)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"error": "Failed to fetch data type index"}, status_code=500)
+
+@app.put("/set_training_config/")
+async def set_training_config(request: Request):
+    config = await request.json()
+    print("Received optimizer config:", config.get("optimizer_json"))
+    print("Received scheduler config:", config.get("scheduler_json"))
+    print("For project ID:", config.get("projectId"))
+    body_dict = {
+        "optimizer_json": json.dumps(config.get("optimizer_json")),
+        "scheduler_json": json.dumps(config.get("scheduler_json")) if config.get("scheduler_json") else None,
+    }
+    request_ = requests.put(
+        f"http://db_service:8002/projects/{config.get('projectId')}",
+        json=body_dict
+    )
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": f"Failed to update project with training config: {request_.json()}"}, status_code=500)
+    return JSONResponse(content={"status": "ok"}, status_code=200)

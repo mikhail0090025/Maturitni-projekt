@@ -9,6 +9,8 @@ import json
 import requests
 import os
 import httpx
+from typing import Optional, Dict, Any
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -461,9 +463,6 @@ async def save_dataset_settings(request: Request):
     dataset_id = body["dataset_id"]
     project_id = body["project_id"]
     dataset_preprocess_json = body["preprocessing_config"]
-    print("Dataset ID received:", dataset_id)
-    print("Project ID received:", project_id)
-    print("Dataset preprocess JSON received:", dataset_preprocess_json)
 
     project_response = requests.get(f'http://projects_manager:8003/{project_id}')
     if project_response.status_code >= 400:
@@ -553,6 +552,49 @@ def prepare_dataset_for_project(request: Request, dataset_id: int, project_id: i
     if request_.status_code >= 400:
         return JSONResponse(content={"detail": "Failed to prepare dataset for project"}, status_code=500)
     return request_.json()
+
+# Training endpoints
+
+class OptimizerConfig(BaseModel):
+    type: str
+    lr: float
+    weight_decay: float
+    betas: list[float]
+
+class SchedulerConfig(BaseModel):
+    type: str
+    total_steps: Optional[int] = None
+    min_lr: Optional[float] = None
+    warmup_steps: Optional[int] = None
+    mode: Optional[str] = None
+    factor: Optional[float] = None
+    patience: Optional[int] = None
+
+class TrainingConfig(BaseModel):
+    optimizer: OptimizerConfig
+    scheduler: Optional[SchedulerConfig] = None
+    projectId: int
+
+@app.post("/set_training_config/")
+async def set_training_config(config: TrainingConfig):
+    print("Received optimizer config:", config.optimizer)
+    print("Received scheduler config:", config.scheduler)
+    print("For project ID:", config.projectId)
+    body_dict = {
+        "optimizer_json": json.dumps(config.optimizer.dict()),
+        "scheduler_json": json.dumps(config.scheduler.dict()) if config.scheduler else None,
+        "projectId": config.projectId
+    }
+    print("Body dict to send:", body_dict)
+    request_ = requests.put(
+        f"http://projects_manager:8003/set_training_config/",
+        json=body_dict
+    )
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": f"Failed to update project with training config: {request_.json()}"}, status_code=500)
+    return JSONResponse(content={"status": "ok"}, status_code=200)
 
 # --- Health Check ---
 

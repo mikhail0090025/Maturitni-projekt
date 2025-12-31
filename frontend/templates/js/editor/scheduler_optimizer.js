@@ -60,3 +60,40 @@ function getSchedulerConfig() {
     };
   }
 }
+
+async function sendTrainingConfig() {
+  const optimizer = getOptimizerConfig();
+  const scheduler = getSchedulerConfig();
+  const projectId = document.getElementById("project-id").value;
+
+  const payload = { optimizer, scheduler, projectId };
+
+  try {
+    const res = await fetch("/set_training_config/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.log("Server response:", data);
+  } catch (err) {
+    console.error("Failed to send training config:", err);
+  }
+}
+
+// слушатели изменений
+document.getElementById("opt-lr").addEventListener("change", sendTrainingConfig);
+document.getElementById("opt-wd").addEventListener("change", sendTrainingConfig);
+document.getElementById("opt-beta1").addEventListener("change", sendTrainingConfig);
+document.getElementById("opt-beta2").addEventListener("change", sendTrainingConfig);
+
+schedulerType.addEventListener("change", sendTrainingConfig);
+document.getElementById("cosine-total-steps")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("cosine-min-lr")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("cosine-warmup-enabled")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("cosine-warmup-steps")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("plateau-mode")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("plateau-factor")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("plateau-patience")?.addEventListener("change", sendTrainingConfig);
+document.getElementById("plateau-min-lr")?.addEventListener("change", sendTrainingConfig);

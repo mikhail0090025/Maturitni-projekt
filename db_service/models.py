@@ -10,6 +10,12 @@ class DataType(Enum):
     IMAGE = "image"
     VECTOR = "vector"
 
+class LossType(Enum):
+    CROSS_ENTROPY = "cross_entropy"
+    MSE = "mean_squared_error"
+    L1 = "L1_loss"
+    SMOOTH_L1 = "SmoothL1_loss"
+
 class User(Base):
     __tablename__ = "users"
 
@@ -37,6 +43,10 @@ class Project(Base):
     architecture_json = Column(Text(), nullable=True)
     dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=True)
     dataset_preprocess_json = Column(Text(), nullable=True)
+
+    optimizer_json = Column(Text(), nullable=True)
+    scheduler_json = Column(Text(), nullable=True)
+    loss_function = Column(EnumType(LossType), nullable=True)
 
     dataset = relationship("Dataset")
     owner = relationship("User", back_populates="projects")

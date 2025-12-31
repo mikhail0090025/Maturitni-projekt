@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, APIRouter
 from pydantic import BaseModel
 from typing import Optional, List
 import db
-from models import DataType
+from models import DataType, LossType
 from fastapi.responses import JSONResponse
 
 app = FastAPI(title="DB Service")
@@ -86,6 +86,9 @@ class ProjectCreate(BaseModel):
     output_type: DataType
     dataset_id: Optional[int] = None
     dataset_preprocess_json: Optional[str] = None
+    optimizer_json: Optional[str] = None
+    scheduler_json: Optional[str] = None
+    loss_function: Optional[LossType] = None
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -96,6 +99,9 @@ class ProjectUpdate(BaseModel):
     project_json: Optional[str] = None
     dataset_id: Optional[int] = None
     dataset_preprocess_json: Optional[str] = None
+    optimizer_json: Optional[str] = None
+    scheduler_json: Optional[str] = None
+    loss_function: Optional[LossType] = None
 
 
 # --- Endpoints ---
@@ -132,6 +138,7 @@ def read_project(project_id: int):
 
 @projects_router.put("/{project_id}", response_model=dict)
 def modify_project(project_id: int, updates: ProjectUpdate):
+    print("Updates received:", updates)
     updated = db.update_project(
         id=project_id,
         new_name=updates.name,
@@ -141,7 +148,10 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         new_output_type=updates.output_type,
         new_architecture_json=updates.project_json,
         new_dataset_id=updates.dataset_id,
-        new_dataset_preprocess_json=updates.dataset_preprocess_json
+        new_dataset_preprocess_json=updates.dataset_preprocess_json,
+        new_scheduler_json=updates.scheduler_json,
+        new_optimizer_json=updates.optimizer_json,
+        new_loss_function=updates.loss_function
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -155,7 +165,10 @@ def modify_project(project_id: int, updates: ProjectUpdate):
         "created_at": str(updated.created_at),
         "project_json": updated.architecture_json,
         "dataset_id": updated.dataset_id,
-        "dataset_preprocess_json": updated.dataset_preprocess_json
+        "dataset_preprocess_json": updated.dataset_preprocess_json,
+        "optimizer_json": updated.optimizer_json,
+        "scheduler_json": updated.scheduler_json,
+        "loss_function": updated.loss_function.value if updated.loss_function else None
     }
 
 @projects_router.delete("/{project_id}", response_model=dict)
@@ -262,6 +275,11 @@ enum_router = APIRouter(prefix="/enums", tags=["enums"])
 @enum_router.get("/datatypes")
 def list_data_types():
     return [dt.value for dt in DataType]
+
+@enum_router.get("/losstypes")
+def list_loss_types():
+    from models import LossType
+    return [lt.value for lt in LossType]
 
 ##################
 @app.get("/")

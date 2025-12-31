@@ -23,6 +23,9 @@
     <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
     <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
     <input type="hidden" id="project-id" value="{{ project_data.id }}">
+    <input type="hidden" id="optimizer-json" value='{{ project_data.optimizer_json }}'>
+    <input type="hidden" id="scheduler-json" value='{{ project_data.scheduler_json }}'>
+    <input type="hidden" id="loss-function" value='{{ project_data.loss_function }}'>
     <div class="project-dataset">
         <label>Dataset:</label>
         <select name="dataset-for-project-select" id="dataset-for-project-select">
@@ -73,5 +76,5 @@
 <script type="text/babel" src="/js/editor/input_settings.js"></script>
 <script src="/js/editor/dataset_settings_save.js"></script>
 <script src="/js/editor/shapes.js"></script>
-<script src="/js/editor/scheduler.js"></script>
+<script src="/js/editor/scheduler_optimizer.js"></script>
 {% endblock %}
