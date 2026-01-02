@@ -134,7 +134,7 @@ def build_torchvision_transforms(
 
     return (
         transforms.Compose(input_tfms),
-        transforms.Compose(aug_tfms) if aug_tfms else transforms.Identity(),
+        transforms.Compose(aug_tfms) if aug_tfms else transforms.Compose([]),
         transforms.Compose(output_tfms)
     )
 
@@ -142,19 +142,21 @@ def get_dataset(
     dataset_id: int,
     project_id: int,
     preprocess_json_text: str,
-    dataset_type: ds_templates.DatasetType
+    dataset_type: ds_templates.DatasetType,
+    cookies: Optional[dict] = None
 ):
-    datasets_resp = requests.get(f"http://datasets_manager:8004/datasets/download/id/{dataset_id}") # File request
+    datasets_resp = requests.get(f"http://datasets_manager:8004/datasets/download/id/{dataset_id}", cookies=cookies) # File request
     if datasets_resp.status_code != 200:
-        raise ValueError("Failed to fetch dataset")
+        raise ValueError(f"Failed to fetch dataset: {datasets_resp.text}")
 
-    dataset_info = requests.get(f"http://datasets_manager:8004/datasets/{dataset_id}").json()
+    dataset_info = requests.get(f"http://datasets_manager:8004/datasets/{dataset_id}", cookies=cookies).json()
     if datasets_resp.status_code != 200:
-        raise ValueError("Failed to fetch dataset info")
+        raise ValueError(f"Failed to fetch dataset info: {datasets_resp.text}")
 
+    print("Dataset info:", dataset_info)
     dataset_path = Path(DATASETS_ROOT) / f"project_{project_id}_dataset_{dataset_id}"
     dataset_path.mkdir(parents=True, exist_ok=True)
-    zip_path = dataset_path / dataset_info['filename']
+    zip_path = dataset_path / dataset_info['storage_id']
 
     with open(zip_path, "wb") as f:
         f.write(datasets_resp.content)

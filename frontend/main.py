@@ -287,7 +287,6 @@ async def update_project(request: Request):
     body = await request.json()
     project_id = body["project_id"]
     project_json = body["project_json"]
-    print("Project JSON received:", project_json)
 
     project_response = requests.get(f'http://projects_manager:8003/{project_id}')
     if project_response.status_code >= 400:
@@ -595,6 +594,41 @@ async def set_training_config(config: TrainingConfig):
     if request_.status_code >= 400:
         return JSONResponse(content={"detail": f"Failed to update project with training config: {request_.json()}"}, status_code=500)
     return JSONResponse(content={"status": "ok"}, status_code=200)
+
+@app.post("/initialize_training/{project_id}")
+async def initialize_training(project_id: int, request: Request):
+    request_body = await request.json()
+    print("Initialize training request body:", request_body)
+    request_ = requests.post(f"http://projects_manager:8003/initialize_training/{project_id}", json=request_body, cookies=request.cookies)
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to initialize training"}, status_code=500)
+    return request_.json()
+
+@app.post("/start_training/{project_id}")
+async def start_training(project_id: int, request: Request):
+    try:
+        request_body = await request.json()
+        print("Start training request body:", request_body)
+        request_ = requests.post(f"http://projects_manager:8003/start_training/{project_id}", cookies=request.cookies, json=request_body)
+        if request_.status_code == 404:
+            return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+        if request_.status_code >= 400:
+
+            return JSONResponse(content={"detail": f"Failed to start training: {request_.json()}"}, status_code=500)
+        return request_.json()
+    except Exception as e:
+        print("Error during start_training:", str(e))
+        return JSONResponse(content={"detail": f"Internal server error: {str(e)}"}, status_code=500)
+
+@app.get("/model_size/{project_id}")
+async def model_size(project_id: int):
+    model_path = os.path.join("projects", f"project_{project_id}_model.pth")
+    if not os.path.exists(model_path):
+        return JSONResponse(content={"detail": "Model file not found"}, status_code=404)
+    size_bytes = os.path.getsize(model_path)
+    return JSONResponse(content={"model_size_bytes": size_bytes}, status_code=200)
 
 # --- Health Check ---
 

@@ -53,12 +53,26 @@
         <button class="btn btn-primary" onclick="prepareDataset()">Prepare Dataset</button>
     </div>
     <div id="optimizer-and-scheduler-block">
+    <div class="opt-sched-row">
         <div id="optimizer-block">
-            {% include "editor/optimizer_settings.html" %}
+        {% include "editor/optimizer_settings.html" %}
         </div>
+
         <div id="scheduler-block">
-            {% include "editor/scheduler_settings.html" %}
+        {% include "editor/scheduler_settings.html" %}
         </div>
+
+        <div id="training-block-wrapper">
+        {% include "editor/training_settings.html" %}
+        </div>
+    </div>
+
+    <button onclick="initializeTraining()" class="btn btn-primary">
+        Initialize Training
+    </button>
+    <button onclick="startTraining()" class="btn btn-primary">
+        Train
+    </button>
     </div>
     <div id="editor-block">
         <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
@@ -77,4 +91,6 @@
 <script src="/js/editor/dataset_settings_save.js"></script>
 <script src="/js/editor/shapes.js"></script>
 <script src="/js/editor/scheduler_optimizer.js"></script>
+<script src="/js/editor/init_optimizer_and_scheduler.js"></script>
+<script src="/js/editor/training.js"></script>
 {% endblock %}

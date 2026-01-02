@@ -138,7 +138,6 @@ def read_project(project_id: int):
 
 @projects_router.put("/{project_id}", response_model=dict)
 def modify_project(project_id: int, updates: ProjectUpdate):
-    print("Updates received:", updates)
     updated = db.update_project(
         id=project_id,
         new_name=updates.name,

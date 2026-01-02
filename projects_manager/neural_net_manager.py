@@ -1,6 +1,8 @@
 import torch
 from torch import nn, optim
 import json
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim import AdamW
 
 # -----------------------------
 # Блоки
@@ -204,17 +206,89 @@ def create_model(json_text):
     print("Created model:", model)
     return model
 
+def create_optimizer(model, optimizer_json):
+    """
+    optimizer_json example:
+    {
+        "type": "AdamW",
+        "lr": 0.0003,
+        "weight_decay": 0.01,
+        "beta1": 0.9,
+        "beta2": 0.999
+    }
+    """
+    optimizer_json = json.loads(optimizer_json)
+    print(optimizer_json, type(optimizer_json))
+    print("-------------------------------")
+    opt_type = optimizer_json.get("type", "AdamW")
+
+    if opt_type != "AdamW":
+        raise ValueError(f"Unsupported optimizer: {opt_type}")
+
+    return AdamW(
+        model.parameters(),
+        lr=optimizer_json.get("lr", 3e-4),
+        weight_decay=optimizer_json.get("weight_decay", 0.0),
+        betas=(
+            optimizer_json.get("beta1", 0.9),
+            optimizer_json.get("beta2", 0.999),
+        )
+    )
+
+def create_scheduler(optimizer, scheduler_json):
+    """
+    scheduler_json examples:
+
+    Cosine:
+    {
+        "type": "cosine",
+        "total_steps": 20000,
+        "min_lr": 1e-6,
+        "warmup_steps": 500
+    }
+
+    Plateau:
+    {
+        "type": "plateau",
+        "mode": "min",
+        "factor": 0.1,
+        "patience": 5,
+        "min_lr": 1e-6
+    }
+    """
+    scheduler_json = json.loads(scheduler_json)
+    sched_type = scheduler_json.get("type", "none")
+
+    if sched_type == "none":
+        return None
+
+    if sched_type == "cosine":
+        return CosineAnnealingLR(
+            optimizer,
+            T_max=scheduler_json.get("total_steps", 1000),
+            eta_min=scheduler_json.get("min_lr", 1e-6)
+        )
+
+    if sched_type == "plateau":
+        return ReduceLROnPlateau(
+            optimizer,
+            mode=scheduler_json.get("mode", "min"),
+            factor=scheduler_json.get("factor", 0.1),
+            patience=scheduler_json.get("patience", 5),
+            min_lr=scheduler_json.get("min_lr", 1e-6)
+        )
+
+    raise ValueError(f"Unsupported scheduler: {sched_type}")
+
 # -----------------------------
 # Класс для обучения
 # -----------------------------
 class FullModel:
-    def __init__(self, model, criterion=nn.MSELoss(), lr=0.001, patience=5, factor=0.1, weight_decay=1e-5):
+    def __init__(self, model, optimizer, scheduler, criterion=nn.MSELoss()):
         self.model = model
         self.criterion = criterion
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, 'min', patience=patience, factor=factor
-        )
+        self.optimizer = optimizer
+        self.scheduler = scheduler
     
     def save(self, path):
         torch.save({
@@ -223,3 +297,116 @@ class FullModel:
             'scheduler_state_dict': self.scheduler.state_dict(),
             'criterion_state_dict': self.criterion.state_dict(),
         }, path)
+    
+    def forward(self, x):
+        return self.model(x)
+    
+    def go_epochs(self, data_loader, epochs=1.0, device='cpu'):
+        self.model.to(device)
+        self.model.train()
+        steps = int(epochs * len(data_loader))
+        for step in range(steps):
+            for batch_idx, (inputs, targets) in enumerate(data_loader):
+                inputs, targets = inputs.to(device), targets.to(device)
+
+                self.optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                loss.backward()
+                self.optimizer.step()
+                if batch_idx % 10 == 0:
+                    print(f"Step [{step+1}/{steps}], Batch [{batch_idx+1}/{len(data_loader)}], Loss: {loss.item():.4f}")
+
+            if self.scheduler:
+                if isinstance(self.scheduler, ReduceLROnPlateau):
+                    self.scheduler.step(loss)
+                else:
+                    self.scheduler.step()
+
+    def go_steps(self, data_loader, steps=1000, device='cpu'):
+        self.model.to(device)
+        self.model.train()
+        step_count = 0
+        while step_count < steps:
+            for batch_idx, (inputs, targets) in enumerate(data_loader):
+                if step_count >= steps:
+                    break
+                inputs, targets = inputs.to(device), targets.to(device)
+
+                self.optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                loss.backward()
+                self.optimizer.step()
+                if batch_idx % 10 == 0:
+                    print(f"Step [{step_count+1}/{steps}], Batch [{batch_idx+1}/{len(data_loader)}], Loss: {loss.item():.4f}")
+                step_count += 1
+
+            if self.scheduler:
+                if isinstance(self.scheduler, ReduceLROnPlateau):
+                    self.scheduler.step(loss)
+                else:
+                    self.scheduler.step()
+
+    def evaluate(self, data_loader, device='cpu'):
+        self.model.to(device)
+        self.model.eval()
+        total_loss = 0.0
+        with torch.no_grad():
+            for inputs, targets in data_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                total_loss += loss.item()
+        avg_loss = total_loss / len(data_loader)
+        print(f"Evaluation Loss: {avg_loss:.4f}")
+        return avg_loss
+    
+    def predict(self, x, device='cpu'):
+        self.model.to(device)
+        self.model.eval()
+        with torch.no_grad():
+            x = x.to(device)
+            outputs = self.model(x)
+        return outputs
+    
+    def to(self, device):
+        self.model.to(device)
+        self.criterion.to(device)
+
+    def load(self, path, device='cpu'):
+        checkpoint = torch.load(path, map_location=device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if self.scheduler and 'scheduler_state_dict' in checkpoint:
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        if 'criterion_state_dict' in checkpoint:
+            self.criterion.load_state_dict(checkpoint['criterion_state_dict'])
+
+def create_full_model(
+    architecture_json: str,
+    optimizer_json: str,
+    scheduler_json: str,
+    criterion_name: str = "MSELoss"
+):
+    # --- model ---
+    model = create_model(architecture_json)
+    print("Model created.")
+
+    # --- optimizer ---
+    optimizer_cfg = json.loads(optimizer_json)
+    optimizer = create_optimizer(model, optimizer_cfg)
+
+    # --- scheduler ---
+    scheduler_cfg = json.loads(scheduler_json)
+    scheduler = create_scheduler(optimizer, scheduler_cfg)
+
+    # --- loss ---
+    criterion = getattr(nn, criterion_name)()
+
+    return FullModel(
+        model=model,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        criterion=criterion
+    )

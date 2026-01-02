@@ -9,6 +9,7 @@ import neural_net_manager as nn_manager
 import os
 from datasets import get_dataset
 import datasets_templates as ds_templates
+from torch.utils.data import Dataset, DataLoader
 
 app = FastAPI()
 
@@ -199,3 +200,120 @@ async def set_training_config(request: Request):
     if request_.status_code >= 400:
         return JSONResponse(content={"detail": f"Failed to update project with training config: {request_.json()}"}, status_code=500)
     return JSONResponse(content={"status": "ok"}, status_code=200)
+
+@app.post("/initialize_training/{project_id}")
+def initialize_training(project_id: int, request: Request):
+   
+    request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
+    if request_get_config.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
+    project = request_get_config.json()
+    print("Project training config:", project)
+    optimizer_json = project.get("optimizer_json")
+    scheduler_json = project.get("scheduler_json")
+    architecture_json = project.get("project_json")
+    loss_function_str = project.get("loss_function")
+    print("Optimizer JSON for training:", optimizer_json)
+    print("Scheduler JSON for training:", scheduler_json)
+    print("Architecture JSON for training:", architecture_json)
+    print("Loss function for training:", loss_function_str)
+    full_model = nn_manager.create_full_model(
+        architecture_json,
+        optimizer_json,
+        scheduler_json,
+        criterion_name=loss_function_str if loss_function_str else "MSELoss"
+    )
+    full_model.save(os.path.join("projects", f"project_{project_id}_training_model.pth"))
+    return JSONResponse(content={"detail": "Training initialization triggered"}, status_code=200)
+
+@app.post("/start_training/{project_id}")
+async def start_training(project_id: int, request: Request):
+    try:
+        request_body = await request.json()
+        print("Received training start request with body:", request_body)
+        training_data = request_body.get("training", {})
+        print("Training data received:", training_data)
+        model_path = os.path.join("projects", f"project_{project_id}_training_model.pth")
+        if not os.path.exists(model_path):
+            return JSONResponse(content={"detail": "Training model file not found. Initialize training first."}, status_code=404)
+
+        request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
+        if request_get_config.status_code >= 400:
+            return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
+        project = request_get_config.json()
+        print("Project training config:", project)
+        optimizer_json = project.get("optimizer_json")
+        scheduler_json = project.get("scheduler_json")
+        architecture_json = project.get("project_json")
+        loss_function_str = project.get("loss_function")
+        print("Optimizer JSON for training:", optimizer_json)
+        print("Scheduler JSON for training:", scheduler_json)
+        print("Architecture JSON for training:", architecture_json)
+        print("Loss function for training:", loss_function_str)
+
+        full_model = nn_manager.create_full_model(
+            architecture_json,
+            optimizer_json,
+            scheduler_json,
+            criterion_name=loss_function_str if loss_function_str else "MSELoss"
+        )
+        full_model.load(path=model_path)
+        print("Loaded training model from:", model_path)
+        print(project['dataset_id'])
+        print(project_id)
+        print(project.get('dataset_preprocess_json', ''))
+        print(ds_templates.input_output_type_to_dataset_type(
+                project['input_type'], project['output_type']))
+        print(request.cookies)
+        
+        dataset = get_dataset(
+            dataset_id=project['dataset_id'],
+            project_id=project_id,
+            preprocess_json_text=project.get('dataset_preprocess_json', ''),
+            dataset_type=ds_templates.input_output_type_to_dataset_type(
+                project['input_type'], project['output_type']),
+            cookies=request.cookies
+        )
+        print(f"Dataset for training loaded. Number of samples: {len(dataset)}")
+        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+        print(f"Starting training for project {project_id} with model: {full_model.model}")
+        return JSONResponse(content={"detail": "Training started"}, status_code=200)
+    except Exception as e:
+        print("Error starting training:", str(e))
+        return JSONResponse(content={"detail": f"Failed to start training: {str(e)}"}, status_code=500)
+
+@app.get("/model_size/{project_id}")
+def model_size(project_id: int):
+    model_path = os.path.join("projects", f"project_{project_id}_training_model.pth")
+    if not os.path.exists(model_path):
+        return JSONResponse(content={"detail": "Training model file not found. Initialize training first."}, status_code=404)
+
+    request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
+    if request_get_config.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
+    project = request_get_config.json()
+    print("Project training config:", project)
+    optimizer_json = project.get("optimizer_json")
+    scheduler_json = project.get("scheduler_json")
+    architecture_json = project.get("project_json")
+    loss_function_str = project.get("loss_function")
+    print("Optimizer JSON for training:", optimizer_json)
+    print("Scheduler JSON for training:", scheduler_json)
+    print("Architecture JSON for training:", architecture_json)
+    print("Loss function for training:", loss_function_str)
+
+    full_model = nn_manager.create_full_model(
+        architecture_json,
+        optimizer_json,
+        scheduler_json,
+        criterion_name=loss_function_str if loss_function_str else "MSELoss"
+    )
+
+    parameters_count = 0
+    for param in full_model.model.parameters():
+        parameters_count += param.numel()
+
+    if not os.path.exists(model_path):
+        return JSONResponse(content={"detail": "Model file not found"}, status_code=404)
+    size_bytes = os.path.getsize(model_path)
+    return JSONResponse(content={"model_size_bytes": size_bytes, "parameters_count": parameters_count}, status_code=200)
