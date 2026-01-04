@@ -10,6 +10,8 @@ import os
 from datasets import get_dataset
 import datasets_templates as ds_templates
 from torch.utils.data import Dataset, DataLoader
+from neural_net_manager import TRAINING_PROGRESS
+import threading
 
 app = FastAPI()
 
@@ -160,7 +162,8 @@ def prepare_dataset_for_project(request: Request, dataset_id: int, project_id: i
             project_id=project_id,
             preprocess_json_text=project.get('dataset_preprocess_json', ''),
             dataset_type=ds_templates.input_output_type_to_dataset_type(
-                project['input_type'], project['output_type'])
+                project['input_type'], project['output_type']),
+            cookies=request.cookies
         )
         return JSONResponse(content={"detail": "Dataset prepared successfully", "num_samples": len(dataset)}, status_code=200)
     except ValueError as ve:
@@ -233,6 +236,15 @@ async def start_training(project_id: int, request: Request):
         print("Received training start request with body:", request_body)
         training_data = request_body.get("training", {})
         print("Training data received:", training_data)
+        batch_size = training_data.get("batch_size", 32)
+        shuffle = training_data.get("shuffle", True)
+        mode = training_data.get("mode", "epochs")
+        if mode == "epochs":
+            epochs = training_data.get("epochs", 1)
+        elif mode == "batches":
+            batches = training_data.get("total_batches", 100)
+        else:
+            return JSONResponse(content={"detail": "Invalid training mode specified."}, status_code=400)
         model_path = os.path.join("projects", f"project_{project_id}_training_model.pth")
         if not os.path.exists(model_path):
             return JSONResponse(content={"detail": "Training model file not found. Initialize training first."}, status_code=404)
@@ -264,7 +276,7 @@ async def start_training(project_id: int, request: Request):
         print(project.get('dataset_preprocess_json', ''))
         print(ds_templates.input_output_type_to_dataset_type(
                 project['input_type'], project['output_type']))
-        print(request.cookies)
+        print("request.cookies:", request.cookies)
         
         dataset = get_dataset(
             dataset_id=project['dataset_id'],
@@ -275,12 +287,40 @@ async def start_training(project_id: int, request: Request):
             cookies=request.cookies
         )
         print(f"Dataset for training loaded. Number of samples: {len(dataset)}")
-        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
+        TRAINING_PROGRESS[project_id] = {
+            "status": "running",
+            "current": 0,
+            "total": epochs if mode == "epochs" else batches,
+            "loss": None
+        }
+
+        def train_loop():
+            print("Starting training loop...")
+            if mode == "epochs":
+                full_model.go_epochs(dataloader, project_id, epochs=epochs)
+            else:
+                full_model.go_steps(dataloader, project_id, steps=batches)
+            full_model.save(model_path)
+            print(f"Training completed and model saved to {model_path}")
+
+        thread = threading.Thread(
+            target=train_loop,
+            daemon=True
+        )
+        thread.start()
+
         print(f"Starting training for project {project_id} with model: {full_model.model}")
         return JSONResponse(content={"detail": "Training started"}, status_code=200)
     except Exception as e:
         print("Error starting training:", str(e))
         return JSONResponse(content={"detail": f"Failed to start training: {str(e)}"}, status_code=500)
+
+@app.get("/get_train_status/{project_id}")
+def get_train_status(project_id: int):
+    status = TRAINING_PROGRESS.get(project_id, {"status": "not started"})
+    return JSONResponse(content=status, status_code=200)
 
 @app.get("/model_size/{project_id}")
 def model_size(project_id: int):

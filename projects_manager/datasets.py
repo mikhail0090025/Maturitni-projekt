@@ -13,129 +13,119 @@ import requests
 from pathlib import Path
 import zipfile
 import datasets_templates as ds_templates
+from dataclasses import dataclass
 
 DATASETS_ROOT = "./temp_datasets/"
 
+@dataclass
+class ImageAugConfig:
+    hflip: float = 0.0
+    vflip: float = 0.0
+    rotate: float = 0.0
+    shift_h: float = 0.0
+    shift_v: float = 0.0
+    scale_h: float = 0.0
+    scale_v: float = 0.0
+    brightness: float = 0.0
+    contrast: float = 0.0
+    saturation: float = 0.0
 
-def build_torchvision_transforms(
-    preprocess_json_text: str,
-    task: str = "classification"
-):
-    """
-    Returns:
-        input_transform
-        augmentation_transform
-        output_transform
-    """
+def parse_image_aug(cfg: dict) -> ImageAugConfig:
+    aug = cfg.get("augmentations", {})
 
-    # ---------- DEFAULT ----------
-    if not preprocess_json_text:
-        return (
-            transforms.ToTensor(),
-            transforms.Identity(),
-            transforms.ToTensor()
+    cj = aug.get("color_jitter", {})
+    aff = aug.get("affine", {})
+
+    return ImageAugConfig(
+        hflip=aug.get("horizontal_flip_prob", 0),
+        vflip=aug.get("vertical_flip_prob", 0),
+        rotate=aff.get("rotate_deg", 0),
+        shift_h=aff.get("shift_h", 0),
+        shift_v=aff.get("shift_v", 0),
+        scale_h=aff.get("scale_h", 0),
+        scale_v=aff.get("scale_v", 0),
+        brightness=cj.get("brightness", 0),
+        contrast=cj.get("contrast", 0),
+        saturation=cj.get("saturation", 0),
+    )
+
+def build_aug_transforms(aug: ImageAugConfig):
+    tfms = []
+
+    if aug.hflip > 0:
+        tfms.append(transforms.RandomHorizontalFlip(aug.hflip))
+
+    if aug.vflip > 0:
+        tfms.append(transforms.RandomVerticalFlip(aug.vflip))
+
+    if aug.rotate > 0 or aug.shift_h or aug.shift_v or aug.scale_h or aug.scale_v:
+        tfms.append(
+            transforms.RandomAffine(
+                degrees=aug.rotate,
+                translate=(aug.shift_h, aug.shift_v),
+                scale=(1 - min(aug.scale_h, aug.scale_v),
+                       1 + max(aug.scale_h, aug.scale_v))
+            )
         )
 
-    cfg = json.loads(preprocess_json_text)
+    if aug.brightness or aug.contrast or aug.saturation:
+        tfms.append(
+            transforms.ColorJitter(
+                brightness=aug.brightness,
+                contrast=aug.contrast,
+                saturation=aug.saturation
+            )
+        )
 
+    return transforms.Compose(tfms)
+
+def build_torchvision_transforms(preprocess_json_text: str, task: str):
+    if not preprocess_json_text:
+        return transforms.ToTensor(), transforms.Compose([]), transforms.ToTensor()
+
+    cfg = json.loads(preprocess_json_text)
+    
+    # ---------- INPUT ----------
+    input_cfg = cfg.get("input", {})
     input_tfms = []
     aug_tfms = []
     output_tfms = []
 
-    # ---------- INPUT BASE ----------
-    input_cfg = cfg.get("input", {})
-    width = input_cfg.get("width")
-    height = input_cfg.get("height")
-    image_type = input_cfg.get("image_type", "rgb")
-
-    if width and height:
-        resize = transforms.Resize(
-            (height, width),
-            interpolation=InterpolationMode.BILINEAR
+    # ---------- Input basic ----------
+    basic_in = input_cfg.get("basic", {})
+    if "width" in basic_in and "height" in basic_in:
+        input_tfms.append(
+            transforms.Resize((basic_in["height"], basic_in["width"]))
         )
-        input_tfms.append(resize)
+    
+    if basic_in.get("color_mode") == "grayscale":
+        input_tfms.insert(0, transforms.Grayscale(1))
 
-        # target resize
-        target_interp = (
-            InterpolationMode.NEAREST
-            if task == "segmentation"
-            else InterpolationMode.BILINEAR
-        )
+    # ---------- Input augmentations ----------
+    aug_cfg = parse_image_aug(input_cfg)
+    aug_tfms = build_aug_transforms(aug_cfg)
 
-        output_tfms.append(
-            transforms.Resize(
-                (height, width),
-                interpolation=target_interp
-            )
-        )
-
-    if image_type == "grayscale":
-        input_tfms.insert(0, transforms.Grayscale(num_output_channels=1))
-
-    # ---------- AUGMENTATIONS ----------
-    aug_cfg = cfg.get("augmentations", {})
-
-    if aug_cfg:
-        if aug_cfg.get("horizontal_flip", 0) > 0:
-            aug_tfms.append(
-                transforms.RandomHorizontalFlip(
-                    p=aug_cfg["horizontal_flip"]
-                )
-            )
-
-        if aug_cfg.get("vertical_flip", 0) > 0:
-            aug_tfms.append(
-                transforms.RandomVerticalFlip(
-                    p=aug_cfg["vertical_flip"]
-                )
-            )
-
-        rotate = aug_cfg.get("rotate", 0)
-        if rotate > 0:
-            aug_tfms.append(
-                transforms.RandomRotation(degrees=rotate)
-            )
-
-        shift_h = aug_cfg.get("shift_h", 0)
-        shift_v = aug_cfg.get("shift_v", 0)
-        scale_h = aug_cfg.get("scale_h", 0)
-        scale_v = aug_cfg.get("scale_v", 0)
-
-        if any([shift_h, shift_v, scale_h, scale_v]):
-            aug_tfms.append(
-                transforms.RandomAffine(
-                    degrees=0,
-                    translate=(shift_h, shift_v),
-                    scale=(1 - min(scale_h, scale_v),
-                           1 + max(scale_h, scale_v))
-                )
-            )
-
-        brightness = aug_cfg.get("brightness", 0)
-        contrast = aug_cfg.get("contrast", 0)
-        saturation = aug_cfg.get("saturation", 0)
-
-        if brightness or contrast or saturation:
-            aug_tfms.append(
-                transforms.ColorJitter(
-                    brightness=brightness,
-                    contrast=contrast,
-                    saturation=saturation
-                )
-            )
-
-    # ---------- FINAL CONVERSIONS ----------
     input_tfms.append(transforms.ToTensor())
 
-    if task == "segmentation":
-        output_tfms.append(transforms.ToTensor())
-    else:
-        output_tfms.append(transforms.ToTensor())
+    # ---------- OUTPUT ----------
+    output_cfg = cfg.get("output", {})
+    basic_out = output_cfg.get("basic", {})
+
+    if "width" in basic_out and "height" in basic_out:
+        output_tfms.append(
+            transforms.Resize((basic_out["height"], basic_out["width"]))
+        )
+
+    # Цвет для выходов, если надо
+    if basic_out.get("color_mode") == "grayscale":
+        output_tfms.insert(0, transforms.Grayscale(1))
+
+    output_tfms.append(transforms.ToTensor())
 
     return (
         transforms.Compose(input_tfms),
-        transforms.Compose(aug_tfms) if aug_tfms else transforms.Compose([]),
-        transforms.Compose(output_tfms)
+        aug_tfms,
+        transforms.Compose(output_tfms),
     )
 
 def get_dataset(
@@ -145,6 +135,8 @@ def get_dataset(
     dataset_type: ds_templates.DatasetType,
     cookies: Optional[dict] = None
 ):
+    print("Dataset preprocess JSON:", preprocess_json_text)
+    print(f"get_dataset cookies: {cookies}")
     datasets_resp = requests.get(f"http://datasets_manager:8004/datasets/download/id/{dataset_id}", cookies=cookies) # File request
     if datasets_resp.status_code != 200:
         raise ValueError(f"Failed to fetch dataset: {datasets_resp.text}")
@@ -171,6 +163,11 @@ def get_dataset(
             preprocess_json_text,
             task="image_to_image"
         )
+
+        print("All transforms:")
+        print("input_transform:", input_transform)
+        print("output_transform:", output_transform)
+        print("augmentation_transform:", augmentation_transform)
 
         dataset = ds_templates.ImageToImageDataset(
             path_to_images=str(dataset_path),

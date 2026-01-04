@@ -28,6 +28,10 @@ const LAYER_TEMPLATES = {
   GroupNorm: { in_features: 1, out_features: 8, num_groups: 1 },
   Dropout: { in_features: 1, out_features: 8, p: 0.5 },
   PixelShuffle: { in_features: 8, out_features: 8, upscale_factor: 1 },
+
+  // Reshapes
+  Flatten: { in_features: 1, out_features: 1 },
+  GlobalAveragePool2D: { in_features: 1, out_features: 1 },
 };
 
 function countParams(layer) {
@@ -425,7 +429,8 @@ function Editor() {
   const LayersThatDontChangeChannels = (layer) => {
     const types = ["ReLU", "LeakyReLU", "PReLU", "Sigmoid", "Tanh", "Softmax",
       "BatchNorm1d", "BatchNorm2d", "LayerNorm", "InstanceNorm1D", "InstanceNorm2D",
-      "GroupNorm", "Dropout", "SEBlock", "ConvolutionalAttention"];
+      "GroupNorm", "Dropout", "SEBlock", "ConvolutionalAttention", "Upsample",
+      "GlobalAveragePool2D"];
     return types.includes(layer.type);
   }
 

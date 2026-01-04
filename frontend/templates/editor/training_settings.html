@@ -36,3 +36,27 @@
     <input type="number" step="1" value="1000" id="train-batches">
   </div>
 </div>
+
+<script>
+  const modeSelect = document.getElementById("training-mode");
+  const epochsBlock = document.getElementById("training-epochs-block");
+  const batchesBlock = document.getElementById("training-batches-block");
+
+  function updateTrainingMode() {
+    const mode = modeSelect.value;
+
+    if (mode === "epochs") {
+      epochsBlock.classList.remove("hidden");
+      batchesBlock.classList.add("hidden");
+    } else {
+      epochsBlock.classList.add("hidden");
+      batchesBlock.classList.remove("hidden");
+    }
+  }
+
+  // реакция на изменение
+  modeSelect.addEventListener("change", updateTrainingMode);
+
+  // корректное состояние при загрузке страницы
+  updateTrainingMode();
+</script>

@@ -1,5 +1,5 @@
 function prepareDataset() {
-  const datasetId = document.getElementById('dataset-select').value;
+  const datasetId = document.getElementById('dataset-for-project-select').value;
   const projectId = document.getElementById('project-id').value;
   fetch(`/prepare_dataset/${datasetId}/for_project/${projectId}`)
     .then(response => {

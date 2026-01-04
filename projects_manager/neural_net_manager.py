@@ -4,6 +4,8 @@ import json
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 from torch.optim import AdamW
 
+TRAINING_PROGRESS = {}
+
 # -----------------------------
 # Блоки
 # -----------------------------
@@ -73,6 +75,14 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         return x + self.block(x)
 
+class DebugLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        print("Shape:", x.shape)
+        return x
+
 # -----------------------------
 # Функция создания модели
 # -----------------------------
@@ -85,6 +95,7 @@ def create_model(json_text):
     for i, layer in enumerate(architecture):
         layer_type = layer['type']
         params = layer.get('params', {})
+        layers_list.append(DebugLayer())
 
         # --- Полносвязные ---
         if layer_type=="Linear":
@@ -202,6 +213,7 @@ def create_model(json_text):
         else:
             raise ValueError(f"Неизвестный тип слоя: {layer_type}")
 
+    layers_list.append(DebugLayer())
     model = nn.Sequential(*layers_list)
     print("Created model:", model)
     return model
@@ -284,11 +296,13 @@ def create_scheduler(optimizer, scheduler_json):
 # Класс для обучения
 # -----------------------------
 class FullModel:
-    def __init__(self, model, optimizer, scheduler, criterion=nn.MSELoss()):
+    def __init__(self, model, optimizer, scheduler, criterion=nn.MSELoss(), losses=[], val_losses=[]):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.losses = losses
+        self.val_losses = val_losses
     
     def save(self, path):
         torch.save({
@@ -296,23 +310,28 @@ class FullModel:
             'optimizer_state_dict': self.optimizer.state_dict(),
             'scheduler_state_dict': self.scheduler.state_dict(),
             'criterion_state_dict': self.criterion.state_dict(),
+            'losses': self.losses,
+            'val_losses': self.val_losses
         }, path)
     
     def forward(self, x):
         return self.model(x)
     
-    def go_epochs(self, data_loader, epochs=1.0, device='cpu'):
+    def go_epochs(self, data_loader, project_id, epochs=1.0, device='cpu'):
         self.model.to(device)
         self.model.train()
         steps = int(epochs * len(data_loader))
         for step in range(steps):
             for batch_idx, (inputs, targets) in enumerate(data_loader):
                 inputs, targets = inputs.to(device), targets.to(device)
+                print("inputs shape:", inputs.shape)
+                print("targets shape:", targets.shape)
 
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
                 loss.backward()
+                self.losses.append(loss.item())
                 self.optimizer.step()
                 if batch_idx % 10 == 0:
                     print(f"Step [{step+1}/{steps}], Batch [{batch_idx+1}/{len(data_loader)}], Loss: {loss.item():.4f}")
@@ -323,20 +342,31 @@ class FullModel:
                 else:
                     self.scheduler.step()
 
-    def go_steps(self, data_loader, steps=1000, device='cpu'):
+                TRAINING_PROGRESS[project_id] = {
+                    "status": "running",
+                    "current": step / steps * (epochs if isinstance(epochs, int) else 1),
+                    "total": epochs,
+                    "loss": loss.item()
+                }
+
+    def go_steps(self, data_loader, project_id, steps=1000, device='cpu'):
         self.model.to(device)
         self.model.train()
         step_count = 0
+        current_step = 0
         while step_count < steps:
             for batch_idx, (inputs, targets) in enumerate(data_loader):
                 if step_count >= steps:
                     break
                 inputs, targets = inputs.to(device), targets.to(device)
+                print("inputs shape:", inputs.shape)
+                print("targets shape:", targets.shape)
 
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
                 loss.backward()
+                self.losses.append(loss.item())
                 self.optimizer.step()
                 if batch_idx % 10 == 0:
                     print(f"Step [{step_count+1}/{steps}], Batch [{batch_idx+1}/{len(data_loader)}], Loss: {loss.item():.4f}")
@@ -347,6 +377,15 @@ class FullModel:
                     self.scheduler.step(loss)
                 else:
                     self.scheduler.step()
+            
+            TRAINING_PROGRESS[project_id] = {
+                "status": "running",
+                "current": current_step,
+                "total": steps,
+                "loss": loss.item()
+            }
+            current_step += 1
+
 
     def evaluate(self, data_loader, device='cpu'):
         self.model.to(device)
@@ -357,6 +396,7 @@ class FullModel:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
+                self.val_losses.append(loss.item())
                 total_loss += loss.item()
         avg_loss = total_loss / len(data_loader)
         print(f"Evaluation Loss: {avg_loss:.4f}")
