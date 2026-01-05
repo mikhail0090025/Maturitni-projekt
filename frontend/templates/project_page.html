@@ -53,6 +53,20 @@
         </div>
         <button class="btn btn-primary" onclick="prepareDataset()">Prepare Dataset</button>
     </div>
+
+
+<div id="editor-block">
+        <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
+            <button class="btn btn-primary">Download file</button>
+        </a>
+        <input type="hidden" id="project-id" value="{{ project_data.id }}">
+        <input type="hidden" id="project-json" value="{{ project_data.project_json }}">
+        <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
+        <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
+    </div>
+    <div id="layers-block"></div>
+
+
     <div id="optimizer-and-scheduler-block">
     <div class="opt-sched-row">
         <div id="optimizer-block">
@@ -76,18 +90,9 @@
     </button>
     {% include "editor/train_status.html" %}
     </div>
-    <div id="editor-block">
-        <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
-            <button class="btn btn-primary">Download file</button>
-        </a>
-        <input type="hidden" id="project-id" value="{{ project_data.id }}">
-        <input type="hidden" id="project-json" value="{{ project_data.project_json }}">
-        <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
-        <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
-    </div>
 
 </div>
-<div id="layers-block"></div>
+
 <script type="text/babel" src="/js/editor/editor.js"></script>
 <script type="text/babel" src="/js/editor/input_settings.js"></script>
 <script src="/js/editor/dataset_settings_save.js"></script>
