@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 import json
-from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, LambdaLR
 from torch.optim import AdamW
 
 TRAINING_PROGRESS = {}
@@ -268,6 +268,10 @@ def create_scheduler(optimizer, scheduler_json):
         "min_lr": 1e-6
     }
     """
+
+    if scheduler_json is None:
+        return LambdaLR(optimizer, lr_lambda=lambda _: 1.0)
+
     scheduler_json = json.loads(scheduler_json)
     sched_type = scheduler_json.get("type", "none")
 
@@ -446,7 +450,11 @@ def create_full_model(
     optimizer = create_optimizer(model, optimizer_cfg)
 
     # --- scheduler ---
-    scheduler_cfg = json.loads(scheduler_json)
+    if scheduler_json is None:
+        scheduler_cfg = None
+    else:
+        scheduler_cfg = json.loads(scheduler_json)
+
     scheduler = create_scheduler(optimizer, scheduler_cfg)
 
     # --- loss ---

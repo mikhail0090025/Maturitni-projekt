@@ -630,6 +630,21 @@ async def model_size(project_id: int):
     size_bytes = os.path.getsize(model_path)
     return JSONResponse(content={"model_size_bytes": size_bytes}, status_code=200)
 
+@app.get("/get_train_status/{project_id}")
+def get_train_status(project_id: int, request: Request):
+    try:
+        request_ = requests.get(f"http://projects_manager:8003/get_train_status/{project_id}", cookies=request.cookies)
+
+        if request_.status_code == 404:
+            return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+        if request_.status_code >= 400:
+            return JSONResponse(content={"detail": f"Failed to start training: {request_.json()}"}, status_code=500)
+
+        return request_.json()
+    except Exception as e:
+        print("Error during getting status:", str(e))
+        return JSONResponse(content={"detail": f"Internal server error: {str(e)}"}, status_code=500)
+
 # --- Health Check ---
 
 @app.get("/health", tags=["health"])
