@@ -292,6 +292,13 @@ def create_scheduler(optimizer, scheduler_json):
 
     raise ValueError(f"Unsupported scheduler: {sched_type}")
 
+import itertools
+
+def infinite_loader(loader):
+    while True:
+        for batch in loader:
+            yield batch
+
 # -----------------------------
 # Класс для обучения
 # -----------------------------
@@ -317,75 +324,76 @@ class FullModel:
     def forward(self, x):
         return self.model(x)
     
-    def go_epochs(self, data_loader, project_id, epochs=1.0, device='cpu'):
+    def go_epochs(self, data_loader, project_id, epochs=1.0, device="cpu"):
         self.model.to(device)
         self.model.train()
-        steps = int(epochs * len(data_loader))
-        for step in range(steps):
-            for batch_idx, (inputs, targets) in enumerate(data_loader):
-                inputs, targets = inputs.to(device), targets.to(device)
-                print("inputs shape:", inputs.shape)
-                print("targets shape:", targets.shape)
 
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, targets)
-                loss.backward()
-                self.losses.append(loss.item())
-                self.optimizer.step()
-                if batch_idx % 10 == 0:
-                    print(f"Step [{step+1}/{steps}], Batch [{batch_idx+1}/{len(data_loader)}], Loss: {loss.item():.4f}")
+        steps_per_epoch = len(data_loader)
+        total_steps = int(epochs * steps_per_epoch)
 
-            if self.scheduler:
-                if isinstance(self.scheduler, ReduceLROnPlateau):
-                    self.scheduler.step(loss)
-                else:
-                    self.scheduler.step()
+        loader = infinite_loader(data_loader)
 
-                TRAINING_PROGRESS[project_id] = {
-                    "status": "running",
-                    "current": step / steps * (epochs if isinstance(epochs, int) else 1),
-                    "total": epochs,
-                    "loss": loss.item()
-                }
+        for step in range(total_steps):
+            inputs, targets = next(loader)
+            inputs, targets = inputs.to(device), targets.to(device)
 
-    def go_steps(self, data_loader, project_id, steps=1000, device='cpu'):
-        self.model.to(device)
-        self.model.train()
-        step_count = 0
-        current_step = 0
-        while step_count < steps:
-            for batch_idx, (inputs, targets) in enumerate(data_loader):
-                if step_count >= steps:
-                    break
-                inputs, targets = inputs.to(device), targets.to(device)
-                print("inputs shape:", inputs.shape)
-                print("targets shape:", targets.shape)
+            self.optimizer.zero_grad()
+            outputs = self.model(inputs)
+            loss = self.criterion(outputs, targets)
+            loss.backward()
+            self.optimizer.step()
 
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, targets)
-                loss.backward()
-                self.losses.append(loss.item())
-                self.optimizer.step()
-                if batch_idx % 10 == 0:
-                    print(f"Step [{step_count+1}/{steps}], Batch [{batch_idx+1}/{len(data_loader)}], Loss: {loss.item():.4f}")
-                step_count += 1
+            self.losses.append(loss.item())
 
-            if self.scheduler:
-                if isinstance(self.scheduler, ReduceLROnPlateau):
-                    self.scheduler.step(loss)
-                else:
-                    self.scheduler.step()
-            
+            print(f"Step [{step+1}/{total_steps}] Loss: {loss.item():.4f}")
+
+            # scheduler — по шагам
+            if self.scheduler and not isinstance(self.scheduler, ReduceLROnPlateau):
+                self.scheduler.step()
+
             TRAINING_PROGRESS[project_id] = {
                 "status": "running",
-                "current": current_step,
+                "current": step / steps_per_epoch,
+                "total": epochs,
+                "loss": loss.item()
+            }
+
+        # ReduceLROnPlateau — один раз в конце
+        if self.scheduler and isinstance(self.scheduler, ReduceLROnPlateau):
+            self.scheduler.step(loss)
+
+    def go_steps(self, data_loader, project_id, steps=1000, device="cpu"):
+        self.model.to(device)
+        self.model.train()
+
+        loader = infinite_loader(data_loader)
+
+        for step in range(steps):
+            inputs, targets = next(loader)
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            self.optimizer.zero_grad()
+            outputs = self.model(inputs)
+            loss = self.criterion(outputs, targets)
+            loss.backward()
+            self.optimizer.step()
+
+            self.losses.append(loss.item())
+
+            print(f"Step [{step+1}/{steps}] Loss: {loss.item():.4f}")
+
+            if self.scheduler and not isinstance(self.scheduler, ReduceLROnPlateau):
+                self.scheduler.step()
+
+            TRAINING_PROGRESS[project_id] = {
+                "status": "running",
+                "current": step,
                 "total": steps,
                 "loss": loss.item()
             }
-            current_step += 1
 
+        if self.scheduler and isinstance(self.scheduler, ReduceLROnPlateau):
+            self.scheduler.step(loss)
 
     def evaluate(self, data_loader, device='cpu'):
         self.model.to(device)
