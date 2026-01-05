@@ -22,7 +22,8 @@ fastapi \
 uvicorn[standard] \
 requests \
 pydantic \
-pandas
+pandas \
+plotly
 
 COPY . .
 

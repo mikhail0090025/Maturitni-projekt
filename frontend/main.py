@@ -318,6 +318,48 @@ async def update_project(request: Request):
 
     return JSONResponse(content={"detail": "Project saved successfully"}, status_code=200)
 
+@app.put("/loss")
+async def update_project_loss(request: Request):
+    try:
+        body = await request.json()
+        project_id = body["project_id"]
+        loss_function = body["loss_function"]
+        print("Updating project", project_id, "with loss function", loss_function)
+
+        project_response = requests.get(f'http://projects_manager:8003/{project_id}')
+        if project_response.status_code >= 400:
+            return JSONResponse(content={'error': f'Couldnt get project with id {project_id}'})
+        user_response = requests.get(
+            "http://user_service:8000/me",
+            cookies=request.cookies
+        )
+        if user_response.status_code >= 400:
+            return RedirectResponse(url="/login_page")
+        user_data = user_response.json()
+        if user_data['username'] != project_response.json().get('owner_username'):
+            return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "You are not the owner of this project!"})
+        data = project_response.json()
+
+        project_update_response = requests.put(
+            f'http://projects_manager:8003/{project_id}',
+            json={
+                "name": data['name'],
+                "description": data.get('description', ''),
+                "owner_username": data['owner_username'],
+                "input_type": data['input_type'],
+                "output_type": data['output_type'],
+                "loss_function": loss_function
+            }
+        )
+        if project_update_response.status_code >= 400:
+            return templates.TemplateResponse("error_page.html", {"request": request, "error_message": "Failed to save project loss function!"})
+
+        return JSONResponse(content={"detail": "Project loss function saved successfully"}, status_code=200)
+    
+    except Exception as e:
+        print("Error in update_project_loss:", str(e))
+        return JSONResponse(content={"error": f"An error occurred while updating the loss function: {str(e)}"}, status_code=500)
+
 @app.post("/delete_project/{project_id}")
 def delete_project_endpoint(project_id: int, request: Request):
     project_response = requests.get(f'http://projects_manager:8003/{project_id}')
@@ -644,6 +686,22 @@ def get_train_status(project_id: int, request: Request):
     except Exception as e:
         print("Error during getting status:", str(e))
         return JSONResponse(content={"detail": f"Internal server error: {str(e)}"}, status_code=500)
+
+@app.get("/projects/{project_id}/loss-plot")
+async def get_loss_plot(project_id: int):
+    request_ = requests.get(f"http://projects_manager:8003/projects/{project_id}/loss-plot")
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to get loss plot"}, status_code=500)
+    return JSONResponse(content=request_.json(), status_code=200)
+
+@app.get("/losstypes")
+def get_loss_types():
+    request_ = requests.get("http://db_service:8002/enums/losstypes")
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to fetch loss types"}, status_code=500)
+    return JSONResponse(content=request_.json(), status_code=200)
 
 # --- Health Check ---
 

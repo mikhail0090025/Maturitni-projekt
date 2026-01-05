@@ -193,7 +193,7 @@ def get_projects_of_user(owner_username: str):
                 "dataset_id": p.dataset_id,
                 "dataset_preprocess_json": p.dataset_preprocess_json,
                 "optimizer_json": p.optimizer_json,
-                "loss_function": p.loss_function.value if p.loss_function else None,
+                "loss_function": p.loss_function.value,
                 "scheduler_json": p.scheduler_json
             } for p in projects
         ]
@@ -214,7 +214,7 @@ def get_all_projects():
                 "dataset_id": p.dataset_id,
                 "dataset_preprocess_json": p.dataset_preprocess_json,
                 "optimizer_json": p.optimizer_json,
-                "loss_function": p.loss_function.value if p.loss_function else None,
+                "loss_function": p.loss_function.value,
                 "scheduler_json": p.scheduler_json
             } for p in projects
         ]

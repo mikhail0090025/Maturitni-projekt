@@ -3,6 +3,7 @@ from torch import nn, optim
 import json
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, LambdaLR
 from torch.optim import AdamW
+import plotly.graph_objects as go
 
 TRAINING_PROGRESS = {}
 
@@ -434,6 +435,32 @@ class FullModel:
             self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         if 'criterion_state_dict' in checkpoint:
             self.criterion.load_state_dict(checkpoint['criterion_state_dict'])
+
+    def get_loss_plot_json(self):
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            y=self.losses,
+            mode='lines',
+            name='Train loss'
+        ))
+
+        if self.val_losses:
+            fig.add_trace(go.Scatter(
+                y=self.val_losses,
+                mode='lines',
+                name='Validation loss'
+            ))
+
+        fig.update_layout(
+            title="Training progress",
+            xaxis_title="Step",
+            yaxis_title="Loss",
+            template="plotly_dark",
+            hovermode="x unified"
+        )
+
+        return fig.to_json()
 
 def create_full_model(
     architecture_json: str,

@@ -11,10 +11,10 @@ class DataType(Enum):
     VECTOR = "vector"
 
 class LossType(Enum):
-    CROSS_ENTROPY = "cross_entropy"
-    MSE = "mean_squared_error"
-    L1 = "L1_loss"
-    SMOOTH_L1 = "SmoothL1_loss"
+    CROSS_ENTROPY = "CrossEntropyLoss"
+    MSE = "MSELoss"
+    L1 = "L1Loss"
+    SMOOTH_L1 = "SmoothL1Loss"
 
 class User(Base):
     __tablename__ = "users"
@@ -46,7 +46,7 @@ class Project(Base):
 
     optimizer_json = Column(Text(), nullable=True)
     scheduler_json = Column(Text(), nullable=True)
-    loss_function = Column(EnumType(LossType), nullable=True)
+    loss_function = Column(EnumType(LossType), nullable=True, default=LossType.MSE)
 
     dataset = relationship("Dataset")
     owner = relationship("User", back_populates="projects")

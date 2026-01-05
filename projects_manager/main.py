@@ -357,3 +357,37 @@ def model_size(project_id: int):
         return JSONResponse(content={"detail": "Model file not found"}, status_code=404)
     size_bytes = os.path.getsize(model_path)
     return JSONResponse(content={"model_size_bytes": size_bytes, "parameters_count": parameters_count}, status_code=200)
+
+@app.get("/projects/{project_id}/loss-plot")
+def losses_graph(project_id: int):
+    try:
+        model_path = os.path.join("projects", f"project_{project_id}_training_model.pth")
+        if not os.path.exists(model_path):
+            return JSONResponse(content={"detail": "Training model file not found. Initialize training first."}, status_code=404)
+
+        request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
+        if request_get_config.status_code >= 400:
+            return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
+        project = request_get_config.json()
+        print("Project training config:", project)
+        optimizer_json = project.get("optimizer_json")
+        scheduler_json = project.get("scheduler_json")
+        architecture_json = project.get("project_json")
+        loss_function_str = project.get("loss_function")
+        print("Optimizer JSON for training:", optimizer_json)
+        print("Scheduler JSON for training:", scheduler_json)
+        print("Architecture JSON for training:", architecture_json)
+        print("Loss function for training:", loss_function_str)
+
+        full_model = nn_manager.create_full_model(
+            architecture_json,
+            optimizer_json,
+            scheduler_json,
+            criterion_name=loss_function_str if loss_function_str else "MSELoss"
+        )
+        full_model.load(path=model_path)
+        graph = full_model.get_loss_plot_json()
+        return graph
+    except Exception as e:
+        print("Error generating losses graph:", str(e))
+        return JSONResponse(content={"detail": f"Failed to generate losses graph: {str(e)}"}, status_code=500)
