@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/styles/editor/scheduler.css">
 <link rel="stylesheet" href="/styles/editor/train_status.css">
 <link rel="stylesheet" href="/styles/editor/loss.css">
+<link rel="stylesheet" href="/styles/editor/train.css">
 
 <!-- React / ReactDOM / Babel (для быстрого прототипа) -->
 <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -64,7 +65,7 @@
 </div>
 
 
-<div id="editor-block">
+    <div id="editor-block">
         <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
             <button class="btn btn-primary">Download file</button>
         </a>
@@ -91,11 +92,14 @@
         </div>
     </div>
 
-    <button onclick="initializeTraining()" class="btn btn-primary">
+    <button onclick="initializeTraining()" class="btn btn-primary" id="initializeTrainingButton">
         Initialize Training
     </button>
-    <button onclick="startTraining()" class="btn btn-primary">
+    <button onclick="startTraining()" class="btn btn-primary" id="startTrainingButton">
         Train
+    </button>
+    <button onclick="resetTraining()" class="btn btn-primary" id="resetTrainingButton">
+        Reset
     </button>
     {% include "editor/train_status.html" %}
     </div>

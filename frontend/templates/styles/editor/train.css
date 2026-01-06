@@ -1,0 +1,6 @@
+#initializeTrainingButton,
+#startTrainingButton,
+#resetTrainingButton {
+    width: 25%;
+    display: inline-block;
+}

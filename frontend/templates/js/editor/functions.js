@@ -28,10 +28,30 @@ async function initializeTraining() {
     if (response.ok) {
       alert('Training initialized successfully.');
     } else {
-      alert(`Failed to initialize training: ${data.detail}`);
+      // alert(`Failed to initialize training: ${data.detail}`);
     }
   } catch (error) {
     console.error('Error initializing training:', error);
     alert('An error occurred while initializing training.');
+  }
+}
+
+async function resetTraining(){
+  const projectId = document.getElementById('project-id').value;
+  try {
+    const response = await fetch(`/projects/${projectId}/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alert('Training was reset successfully.');
+    }
+    else {
+      alert(`Failed to reset training: ${data.detail}`);
+    }
+  } catch (error) {
+    console.error('Error resetting training:', error);
+    alert('An error occurred while resetting training.');
   }
 }

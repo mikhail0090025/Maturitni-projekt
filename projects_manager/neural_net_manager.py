@@ -6,6 +6,7 @@ from torch.optim import AdamW
 import plotly.graph_objects as go
 
 TRAINING_PROGRESS = {}
+TRAINING_STOP_FLAG = {}
 
 # -----------------------------
 # Блоки
@@ -308,14 +309,15 @@ def infinite_loader(loader):
 # Класс для обучения
 # -----------------------------
 class FullModel:
-    def __init__(self, model, optimizer, scheduler, criterion=nn.MSELoss(), losses=[], val_losses=[]):
+    def __init__(self, model, optimizer, scheduler, criterion=nn.MSELoss(),
+             losses=None, val_losses=None):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.losses = losses
-        self.val_losses = val_losses
-    
+        self.losses = losses if losses is not None else []
+        self.val_losses = val_losses if val_losses is not None else []
+
     def save(self, path):
         torch.save({
             'model_state_dict': self.model.state_dict(),
@@ -325,10 +327,38 @@ class FullModel:
             'losses': self.losses,
             'val_losses': self.val_losses
         }, path)
-    
+
+    def load(self, path, device='cpu'):
+        checkpoint = torch.load(path, map_location=device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if self.scheduler and 'scheduler_state_dict' in checkpoint:
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        if 'criterion_state_dict' in checkpoint:
+            self.criterion.load_state_dict(checkpoint['criterion_state_dict'])
+        if 'losses' in checkpoint:
+            self.losses = checkpoint['losses']
+        if 'val_losses' in checkpoint:
+            self.val_losses = checkpoint['val_losses']
+
     def forward(self, x):
         return self.model(x)
-    
+
+    def reset_all(self, project_json, optimizer_json, scheduler_json):
+
+        new_model = create_model(project_json)
+        new_optimizer = create_optimizer(new_model, optimizer_json)
+        new_scheduler = create_scheduler(new_optimizer, scheduler_json)
+
+        self.model = new_model
+        self.optimizer = new_optimizer
+        self.scheduler = new_scheduler
+
+        self.losses = []
+        self.val_losses = []
+
+        print("Model, optimizer and scheduler have been reset.")
+
     def go_epochs(self, data_loader, project_id, epochs=1.0, device="cpu"):
         self.model.to(device)
         self.model.train()
@@ -366,6 +396,13 @@ class FullModel:
         # ReduceLROnPlateau — один раз в конце
         if self.scheduler and isinstance(self.scheduler, ReduceLROnPlateau):
             self.scheduler.step(loss)
+        
+        TRAINING_PROGRESS[project_id] = {
+            "status": "finished",
+            "current": total_steps / steps_per_epoch,
+            "total": epochs,
+            "loss": loss.item()
+        }
 
     def go_steps(self, data_loader, project_id, steps=1000, device="cpu"):
         self.model.to(device)
@@ -399,6 +436,13 @@ class FullModel:
 
         if self.scheduler and isinstance(self.scheduler, ReduceLROnPlateau):
             self.scheduler.step(loss)
+        
+        TRAINING_PROGRESS[project_id] = {
+            "status": "finished",
+            "current": steps,
+            "total": steps,
+            "loss": loss.item()
+        }
 
     def evaluate(self, data_loader, device='cpu'):
         self.model.to(device)
@@ -426,15 +470,6 @@ class FullModel:
     def to(self, device):
         self.model.to(device)
         self.criterion.to(device)
-
-    def load(self, path, device='cpu'):
-        checkpoint = torch.load(path, map_location=device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        if self.scheduler and 'scheduler_state_dict' in checkpoint:
-            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        if 'criterion_state_dict' in checkpoint:
-            self.criterion.load_state_dict(checkpoint['criterion_state_dict'])
 
     def get_loss_plot_json(self):
         fig = go.Figure()

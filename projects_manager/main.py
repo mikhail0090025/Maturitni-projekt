@@ -206,7 +206,7 @@ async def set_training_config(request: Request):
 
 @app.post("/initialize_training/{project_id}")
 def initialize_training(project_id: int, request: Request):
-   
+
     request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
     if request_get_config.status_code >= 400:
         return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
@@ -226,6 +226,11 @@ def initialize_training(project_id: int, request: Request):
         scheduler_json,
         criterion_name=loss_function_str if loss_function_str else "MSELoss"
     )
+    try:
+        full_model.load(os.path.join("projects", f"project_{project_id}_training_model.pth"))
+    except Exception as e:
+        print(f"Could not load model: {str(e)}")
+
     full_model.save(os.path.join("projects", f"project_{project_id}_training_model.pth"))
     return JSONResponse(content={"detail": "Training initialization triggered"}, status_code=200)
 
@@ -388,6 +393,44 @@ def losses_graph(project_id: int):
         full_model.load(path=model_path)
         graph = full_model.get_loss_plot_json()
         return graph
+    except Exception as e:
+        print("Error generating losses graph:", str(e))
+        return JSONResponse(content={"detail": f"Failed to generate losses graph: {str(e)}"}, status_code=500)
+
+@app.post("/projects/{project_id}/reset")
+def reset_endpoint(project_id: int):
+    try:
+        model_path = os.path.join("projects", f"project_{project_id}_training_model.pth")
+        if not os.path.exists(model_path):
+            return JSONResponse(content={"detail": "Training model file not found. Initialize training first."}, status_code=404)
+
+        request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
+        if request_get_config.status_code >= 400:
+            return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
+        project = request_get_config.json()
+        print("Project training config:", project)
+        optimizer_json = project.get("optimizer_json")
+        scheduler_json = project.get("scheduler_json")
+        architecture_json = project.get("project_json")
+        loss_function_str = project.get("loss_function")
+        print("Optimizer JSON for training:", optimizer_json)
+        print("Scheduler JSON for training:", scheduler_json)
+        print("Architecture JSON for training:", architecture_json)
+        print("Loss function for training:", loss_function_str)
+
+        full_model = nn_manager.create_full_model(
+            architecture_json,
+            optimizer_json,
+            scheduler_json,
+            criterion_name=loss_function_str if loss_function_str else "MSELoss"
+        )
+        full_model.save(model_path)
+
+        TRAINING_PROGRESS[project_id] = {
+            "status": "not started"
+        }
+
+        return JSONResponse(content={"detail": f"Model for project with ID {project_id} was reset"}, status_code=200)
     except Exception as e:
         print("Error generating losses graph:", str(e))
         return JSONResponse(content={"detail": f"Failed to generate losses graph: {str(e)}"}, status_code=500)

@@ -696,6 +696,15 @@ async def get_loss_plot(project_id: int):
         return JSONResponse(content={"detail": "Failed to get loss plot"}, status_code=500)
     return JSONResponse(content=request_.json(), status_code=200)
 
+@app.post("/projects/{project_id}/reset")
+async def get_loss_plot(project_id: int):
+    request_ = requests.post(f"http://projects_manager:8003/projects/{project_id}/reset")
+    if request_.status_code == 404:
+        return JSONResponse(content={"detail": "Project not found"}, status_code=404)
+    if request_.status_code >= 400:
+        return JSONResponse(content={"detail": "Failed to get loss plot"}, status_code=500)
+    return JSONResponse(content=request_.json(), status_code=200)
+
 @app.get("/losstypes")
 def get_loss_types():
     request_ = requests.get("http://db_service:8002/enums/losstypes")

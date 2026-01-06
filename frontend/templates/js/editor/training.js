@@ -51,7 +51,7 @@ function initializeTraining() {
       if (data.status === "ok") {
         alert("Training initialized successfully.");
         } else {
-        alert(`Failed to initialize training: ${data.detail}`);
+        //alert(`Failed to initialize training: ${data.detail}`);
         }
     }).catch((error) => {
         console.error("Error initializing training:", error);
@@ -74,7 +74,7 @@ function startTraining() {
           if (data.status === "ok") {
                 alert("Training started successfully.");
             } else {
-                alert(`Failed to start training: ${data.detail}`);
+                // alert(`Failed to start training: ${data.detail}`);
             }
         }).catch(error => {
             console.error("Error starting training:", error);
