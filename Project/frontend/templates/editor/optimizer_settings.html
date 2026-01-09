@@ -1,0 +1,34 @@
+<div class="settings-block" id="optimizer-block">
+  <h3>Optimizer</h3>
+
+  <div class="group">
+    <label>Optimizer type</label>
+    <select disabled>
+      <option selected>AdamW</option>
+    </select>
+  </div>
+
+  <div class="group row">
+    <div>
+      <label>Learning rate</label>
+      <input type="number" step="0.000001" value="0.0003" id="opt-lr">
+    </div>
+
+    <div>
+      <label>Weight decay</label>
+      <input type="number" step="0.0001" value="0.01" id="opt-wd">
+    </div>
+  </div>
+
+  <div class="group row">
+    <div>
+      <label>Beta 1</label>
+      <input type="number" step="0.01" value="0.9" id="opt-beta1">
+    </div>
+
+    <div>
+      <label>Beta 2</label>
+      <input type="number" step="0.001" value="0.999" id="opt-beta2">
+    </div>
+  </div>
+</div>

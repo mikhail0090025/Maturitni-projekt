@@ -1,0 +1,11 @@
+docker-compose exec db_service alembic revision --autogenerate -m "Losses updated"
+docker-compose exec db_service alembic upgrade head
+
+docker-compose exec postgres psql -U nn_manager -d nn_manager_db -c "TRUNCATE TABLE datasets RESTART IDENTITY CASCADE;"
+docker-compose exec postgres psql -U nn_manager -d nn_manager_db -c "TRUNCATE TABLE projects RESTART IDENTITY CASCADE;"
+docker-compose exec postgres psql -U nn_manager -d nn_manager_db -c "TRUNCATE TABLE users RESTART IDENTITY CASCADE;"
+
+Если не работает:
+docker-compose exec db_service alembic stamp head
+docker-compose exec db_service alembic revision --autogenerate -m "Losses updated"
+docker-compose exec db_service alembic upgrade head

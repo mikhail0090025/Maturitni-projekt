@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block head %}
+    <!-- React и ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel для JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div>
+        <div class="inline-block">
+            <h1>{{ name }} {{ surname }}</h1>
+            <h6>{{ username }}</h6>
+            <p><i>{{ bio }}</i></p>
+        </div>
+        <div class="inline-block">
+            <button id="logout_button" class="btn btn-danger">Logout</button>
+            <button id="settings_button" class="btn btn-primary">Settings</button>
+        </div>
+        <div>
+            <a href="/new_project_page"><button class="btn btn-success">New Project</button></a>
+            <a href="/all_datasets_page"><button class="btn btn-success">My Datasets</button></a>
+        </div>
+        <input type="hidden" name="username" id="username" value="{{ username }}">
+        <br><br>
+        <div id="projects">
+
+        </div>
+    </div>
+    <script src="/js/profile.js"></script>
+    <script src="/js/show_projects_on_mainpage.js" type="text/babel"></script>
+    <script src="/js/init_mainpage.js" defer></script>
+{% endblock %}

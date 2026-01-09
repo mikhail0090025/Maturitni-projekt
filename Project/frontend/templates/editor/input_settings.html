@@ -1,0 +1,132 @@
+<div id="input-settings-block" class="input-settings-block">
+
+    <h3>Input settings</h3>
+
+    <!-- ======== TAB BUTTONS ======== -->
+    <div class="tabs">
+        <button class="tab-button active" data-tab="basic">Basic</button>
+        <button class="tab-button" data-tab="augment">Augmentations</button>
+    </div>
+
+    <!-- ======== TAB CONTENT: BASIC ======== -->
+    <div id="tab-basic" class="tab-content active">
+
+        {% if project_data.input_type == 'image' %}
+        <div class="group">
+
+            <label>Input image type:</label>
+            <select name="select-input-image-type" id="select-input-image-type">
+                <option value="rgb">RGB</option>
+                <option value="cmyk">CMYK</option>
+                <option value="grayscale">Grayscale</option>
+            </select>
+
+        </div>
+
+        <div class="group">
+            <label>Resolution:</label>
+
+            <div class="row">
+                <div>
+                    <label for="width-image-input">Width</label>
+                    <input class="small-input" type="number" min="1" max="3000"
+                        value="128" step="1" id="width-image-input">
+                </div>
+
+                <div>
+                    <label for="height-image-input">Height</label>
+                    <input class="small-input" type="number" min="1" max="3000"
+                        value="128" step="1" id="height-image-input">
+                </div>
+            </div>
+        </div>
+        {% else %}
+            <p>Settings for this input type are developing</p>
+        {% endif %}
+
+    </div>
+
+    <!-- ======== TAB CONTENT: AUGMENTATIONS ======== -->
+    <div id="tab-augment" class="tab-content">
+
+        {% if project_data.input_type == 'image' %}
+
+        <div class="group row">
+            <div>
+                <label for="horizontal-flip">Horizontal flip prob</label>
+                <input class="small-input" type="number" min="0" max="1" step="0.01"
+                    id="horizontal-flip" value="0.5">
+            </div>
+
+            <div>
+                <label for="vertical-flip">Vertical flip prob</label>
+                <input class="small-input" type="number" min="0" max="1" step="0.01"
+                    id="vertical-flip" value="0.1">
+            </div>
+        </div>
+
+        <div class="group">
+            <label>Color jitter:</label>
+
+            <div class="row">
+                <div>
+                    <label>Brightness</label>
+                    <input class="small-input" type="number" min="0" max="1" step="0.01"
+                        id="input-image-brightness" value="0">
+                </div>
+
+                <div>
+                    <label>Contrast</label>
+                    <input class="small-input" type="number" min="0" max="1" step="0.01"
+                        id="input-image-contrast" value="0">
+                </div>
+
+                <div>
+                    <label>Saturation</label>
+                    <input class="small-input" type="number" min="0" max="1" step="0.01"
+                        id="input-image-saturation" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>Shift / Scale / Rotate:</label>
+
+            <div class="row grid-3">
+                <div>
+                    <label>Shift H</label>
+                    <input class="small-input" type="number" min="0" max="1"
+                        step="0.01" id="input-image-shift-h" value="0">
+                </div>
+
+                <div>
+                    <label>Shift V</label>
+                    <input class="small-input" type="number" min="0" max="1"
+                        step="0.01" id="input-image-shift-v" value="0">
+                </div>
+
+                <div>
+                    <label>Scale H</label>
+                    <input class="small-input" type="number" min="0" max="1"
+                        step="0.01" id="input-image-scale-h" value="0">
+                </div>
+
+                <div>
+                    <label>Scale V</label>
+                    <input class="small-input" type="number" min="0" max="1"
+                        step="0.01" id="input-image-scale-v" value="0">
+                </div>
+
+                <div>
+                    <label>Rotate</label>
+                    <input class="small-input" type="number" min="0" max="180"
+                        step="0.5" id="input-image-rotate" value="0">
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+            <p>No augmentations for this input type.</p>
+        {% endif %}
+    </div>
+</div>

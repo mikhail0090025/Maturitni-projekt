@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block head %}
+<!-- <link rel="stylesheet" href="/styles/styles.css"> -->
+{% endblock %}
+
+{% block content %}
+<h3>Settings</h3>
+<a href="/profile_page">
+    <button class="btn btn-outline-primary">Back</button>
+</a>
+<button class="btn btn-outline-danger" id="delete-account-button">Delete Account</button>
+<div>
+    <input type="hidden" id="initial_username" value="{{ username }}">
+    <div>
+        <label for="new_username">Username</label>
+        <input type="text" id="new_username" value="{{ username }}">
+    </div>
+    <div>
+        <label for="new_name">Name</label>
+        <input type="text" id="new_name" value="{{ name }}">
+    </div>
+    <div>
+        <label for="new_surname">Surname</label>
+        <input type="text" id="new_surname" value="{{ surname }}">
+    </div>
+    <div>
+        <label for="new_born_date">Birth date</label>
+        <input type="date" id="new_born_date" value="{{ born_date }}">
+    </div>
+    <div>
+        <label for="new_bio">Bio:</label>
+        <textarea name="new_bio" id="new_bio">{{ bio }}</textarea>
+    </div>
+    <button class="btn btn-outline-primary" id="update-account-button">Update</button>
+</div>
+<script src="/js/settings.js"></script>
+{% endblock %}

@@ -1,6 +1,0 @@
-taskkill /F /IM "Docker Desktop.exe"
-taskkill /F /IM "dockerd.exe"
-taskkill /F /IM "com.docker.backend.exe"
-Stop-Service com.docker.service -Force
-wsl --shutdown
-Start-Service com.docker.service

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project_data.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/styles/editor/editor.css">
+<link rel="stylesheet" href="/styles/editor/input_settings.css">
+<link rel="stylesheet" href="/styles/editor/scheduler.css">
+<link rel="stylesheet" href="/styles/editor/train_status.css">
+<link rel="stylesheet" href="/styles/editor/loss.css">
+<link rel="stylesheet" href="/styles/editor/train.css">
+
+<!-- React / ReactDOM / Babel (для быстрого прототипа) -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="/js/editor/functions.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="main-block">
+    <div id="header-block">
+        <h1>{{ project_data.name }}</h1><br>
+        <!-- <h4>{{ project_data.description }}</h4> -->
+    </div>
+    <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
+    <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
+    <input type="hidden" id="project-id" value="{{ project_data.id }}">
+    <input type="hidden" id="optimizer-json" value='{{ project_data.optimizer_json }}'>
+    <input type="hidden" id="scheduler-json" value='{{ project_data.scheduler_json }}'>
+    <input type="hidden" id="loss-function" value='{{ project_data.loss_function }}'>
+    <div class="project-dataset">
+        <label>Dataset:</label>
+        <select name="dataset-for-project-select" id="dataset-for-project-select">
+            {% for dataset in datasets %}
+                <option value="{{ dataset.id }}"
+                    {% if project_data.dataset and dataset.id == project_data.dataset.id %}
+                        selected
+                    {% endif %}
+                >
+                    {{ dataset.name }} ({{ dataset.dataset_type }})
+                </option>
+            {% endfor %}
+        </select>
+        <div class="settings-block">
+            {% include "editor/input_settings.html" %}
+        </div>
+
+        <div class="settings-block">
+            {% include "editor/output_settings.html" %}
+        </div>
+        <div id="tensor-shape-info" class="tensor-shape-info">
+            <p><strong>Input shape:</strong> <span id="input-shape-value">—</span></p>
+            <p><strong>Output shape:</strong> <span id="output-shape-value">—</span><span id="output-shape-value-current">—</span></p>
+        </div>
+        <button class="btn btn-primary" onclick="prepareDataset()">Prepare Dataset</button>
+    </div>
+
+<div class="loss-setting">
+  <label for="loss-select">Loss function</label>
+  <select id="loss-select">
+    <option disabled selected>Loading…</option>
+  </select>
+  <div id="loss-status" class="status"></div>
+</div>
+
+
+    <div id="editor-block">
+        <a href="http://projects_manager:8003/get_model_file/{{ project_data.id }}" download="model_{{ project_data.id }}.pth">
+            <button class="btn btn-primary">Download file</button>
+        </a>
+        <input type="hidden" id="project-id" value="{{ project_data.id }}">
+        <input type="hidden" id="project-json" value="{{ project_data.project_json }}">
+        <input type="hidden" id="input-type" value="{{ project_data.input_type }}">
+        <input type="hidden" id="output-type" value="{{ project_data.output_type }}">
+    </div>
+    <div id="layers-block"></div>
+
+
+    <div id="optimizer-and-scheduler-block">
+    <div class="opt-sched-row">
+        <div id="optimizer-block">
+        {% include "editor/optimizer_settings.html" %}
+        </div>
+
+        <div id="scheduler-block">
+        {% include "editor/scheduler_settings.html" %}
+        </div>
+
+        <div id="training-block-wrapper">
+        {% include "editor/training_settings.html" %}
+        </div>
+    </div>
+
+    <button onclick="initializeTraining()" class="btn btn-primary" id="initializeTrainingButton">
+        Initialize Training
+    </button>
+    <button onclick="startTraining()" class="btn btn-primary" id="startTrainingButton">
+        Train
+    </button>
+    <button onclick="resetTraining()" class="btn btn-primary" id="resetTrainingButton">
+        Reset
+    </button>
+    {% include "editor/train_status.html" %}
+    </div>
+
+    <div id="loss-plot" style="width:100%; height:400px;"></div>
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<script>
+async function loadLossPlot(projectId) {
+  const res = await fetch(`/projects/${projectId}/loss-plot`);
+  if (!res.ok) return;
+
+  const plotJson = await res.json();
+  const figure = JSON.parse(plotJson);
+
+  Plotly.react('loss-plot', figure.data, figure.layout);
+}
+
+// обновлять каждые 2 секунды
+setInterval(() => {
+  loadLossPlot(document.getElementById('project-id').value);
+}, 2000);
+</script>
+
+</div>
+
+<script type="text/babel" src="/js/editor/editor.js"></script>
+<script type="text/babel" src="/js/editor/input_settings.js"></script>
+<script src="/js/editor/dataset_settings_save.js"></script>
+<script src="/js/editor/shapes.js"></script>
+<script src="/js/editor/scheduler_optimizer.js"></script>
+<script src="/js/editor/init_optimizer_and_scheduler.js"></script>
+<script src="/js/editor/training.js"></script>
+<script src="/js/editor/train_status.js"></script>
+<script src="/js/editor/loss.js"></script>
+{% endblock %}

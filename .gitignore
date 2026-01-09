@@ -1,8 +1,0 @@
-/postgres/pgdata
-__pycache__/
-*.pyc
-/datasets_manager/datasets
-/projects_manager/projects
-/media
-anim.py
-/projects_manager/temp_datasets

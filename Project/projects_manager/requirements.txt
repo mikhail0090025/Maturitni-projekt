@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+requests
+pydantic
+pandas
+numpy
+
+# psycopg2-binary
+# sqlalchemy
+# alembic
+# python-dotenv
+# bcrypt
+# pytest
