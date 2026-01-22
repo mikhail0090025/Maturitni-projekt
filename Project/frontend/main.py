@@ -131,6 +131,24 @@ def new_dataset_page(request: Request):
 def detr_page(request: Request):
     return templates.TemplateResponse("detr.html", {"request": request})
 
+@app.get("/cats_page")
+def cats_page(request: Request):
+    return templates.TemplateResponse("cats.html", {"request": request})
+
+@app.get("/gif_generate")
+async def gif_endpoint():
+    req_response = requests.get("http://my_models:8005/gif_generate", stream=True)
+    if req_response.status_code != 200:
+        return Response(content=req_response.content, status_code=req_response.status_code)
+    return StreamingResponse(req_response.iter_content(chunk_size=8192), media_type="image/gif")
+
+@app.get("/generate")
+async def image_endpoint():
+    req_response = requests.get("http://my_models:8005/generate", stream=True)
+    if req_response.status_code != 200:
+        return Response(content=req_response.content, status_code=req_response.status_code)
+    return StreamingResponse(req_response.iter_content(chunk_size=8192), media_type="image/png")
+
 @app.get("/mainpage")
 def mainpage(request: Request):
     return RedirectResponse(url="/profile_page")

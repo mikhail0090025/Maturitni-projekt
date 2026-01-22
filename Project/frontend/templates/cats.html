@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Diffusion Generator{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/styles/cats.css">
+{% endblock %}
+
+{% block content %}
+<h1>Diffusion Generator</h1>
+<h6>Refresh page to get new images</h6>
+<div class="container">
+    <img src="http://localhost:8001/generate" alt="Generated Image">
+    <div id="gif_animations">
+        <img src="http://localhost:8001/gif_generate" alt="Generated GIF" width="150px" height="auto">
+    </div>
+</div>
+<script src="/js/cats.js"></script>
+{% endblock %}
