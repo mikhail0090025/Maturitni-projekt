@@ -13,7 +13,7 @@ import math
 import torchvision.models as models
 from torchvision.ops import generalized_box_iou
 
-from utils import box_cxcywh_to_xyxy, box_iou, bbox_iou, ciou_loss_xyxy, init_weights
+from nn_utils import box_cxcywh_to_xyxy, box_iou, bbox_iou, ciou_loss_xyxy, init_weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

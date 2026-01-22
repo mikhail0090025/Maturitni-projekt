@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Face detection{% endblock %}
+
+{% block head %}
+<style>
+  video, canvas {
+    position: absolute;
+    top: 500px;
+    left: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<video id="video" width="480" height="360" autoplay muted></video>
+<canvas id="canvas" width="480" height="360"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// Получаем доступ к вебке
+navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+  video.srcObject = stream;
+});
+
+let lastTime = 0;
+
+// Функция для отправки кадра на сервер
+async function sendFrame() {
+  // Рисуем текущий кадр на временном canvas
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = 240;
+  tempCanvas.height = 240;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.drawImage(video, 0, 0, 240, 240);
+  
+  const now = performance.now();
+  fps = 1000 / (now - lastTime);
+  lastTime = now;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "lime";
+  ctx.font = "16px Arial";
+  ctx.fillText(`FPS: ${fps.toFixed(1)}`, 10, 20);
+
+  // Получаем изображение в формате blob
+  const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, "image/jpeg"));
+
+  // Создаём FormData и отправляем POST
+  const formData = new FormData();
+  formData.append("file", blob, "frame.jpg");
+
+  try {
+    const response = await fetch("http://localhost:8001/predict", {
+      method: "POST",
+      body: formData
+    });
+    const data = await response.json();
+    drawBoxes(data.boxes);
+  } catch (err) {
+    console.error("Ошибка запроса:", err);
+  }
+}
+
+// Функция для отрисовки рамок
+function drawBoxes(boxes) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 2;
+  boxes.forEach(box => {
+    const [x, y, w, h] = box;
+    // Пропорционально масштабируем до размера видео на фронтенде
+    ctx.strokeRect(x * canvas.width / 240, y * canvas.height / 240,
+                   w * canvas.width / 240, h * canvas.height / 240);
+  });
+}
+
+// Каждые 300 мс отправляем кадр
+setInterval(sendFrame, 300);
+</script>
+{% endblock %}

@@ -12,9 +12,9 @@ import os
 import math
 import torchvision.models as models
 from torchvision.ops import generalized_box_iou
-from detr.models_lite import FullModel
-from my_models.detr.nn_utils import box_cxcywh_to_xyxy, box_iou, ciou_loss_xyxy, get_objects_on_image
-import cats.diffusion_model as dm
+from models_lite import FullModel
+from nn_utils import box_cxcywh_to_xyxy, box_iou, ciou_loss_xyxy, get_objects_on_image
+import diffusion_model as dm
 
 # FastAPI imports
 from fastapi import FastAPI
@@ -40,7 +40,7 @@ num_encoder_layers = 4
 num_decoder_layers = 3
 classes_count = 1
 
-model_path = "detr/detr_face_detection_model_lite.pth"
+model_path = "detr_face_detection_model_lite.pth"
 
 model = FullModel(embedding_size, hidden_embedding_size, num_heads, num_encoder_layers, num_decoder_layers, classes_count, 100, 0.0)
 model.to(device)
@@ -71,7 +71,7 @@ async def predict(tensor_file: UploadFile = File(...)):
 
 @app.get("/generate")
 async def image_endpoint():
-    diffusion_steps = 40
+    diffusion_steps = 20
     power = 0.3
     with torch.no_grad():
         dm.model.plot_images(num_rows=1, num_cols=3, power=power, diffusion_steps=diffusion_steps)
@@ -81,7 +81,7 @@ async def image_endpoint():
 @app.get("/gif_generate")
 async def gif_image_endpoint():
     num_images = 1
-    diffusion_steps = 40
+    diffusion_steps = 20
     power = 0.3
     with torch.no_grad():
         initial_noise = torch.randn((num_images, 3, dm.image_size, dm.image_size))

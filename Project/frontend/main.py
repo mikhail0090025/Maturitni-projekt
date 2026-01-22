@@ -11,6 +11,10 @@ import os
 import httpx
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
+import io
+import torch
+import numpy as np
+from PIL import Image
 
 app = FastAPI()
 
@@ -122,6 +126,32 @@ def new_dataset_page(request: Request):
         return RedirectResponse(url="/login_page")
     user_data = response_to_user.json()
     return templates.TemplateResponse("new_dataset.html", {"request": request, "bio": user_data["bio"], "username": user_data["username"], "name": user_data["name"], "surname": user_data["surname"], "born_date": user_data["born_date"]})
+
+@app.get("/detr_page")
+def detr_page(request: Request):
+    return templates.TemplateResponse("detr.html", {"request": request})
+
+@app.get("/mainpage")
+def mainpage(request: Request):
+    return RedirectResponse(url="/profile_page")
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    image = Image.open(io.BytesIO(await file.read())).convert("RGB").resize((240, 240), Image.BILINEAR)
+    image_np = np.array(image)
+    image = torch.from_numpy(image_np).permute(2, 0, 1).unsqueeze(0).float()
+    image = image / 255.0
+    tensor_bytes = io.BytesIO()
+    torch.save(image, tensor_bytes)
+    tensor_bytes.seek(0)
+    response = requests.post(
+        "http://my_models:8005/predict",
+        files={"tensor_file": tensor_bytes}
+    )
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Model service error")
+    print(response.json())
+    return JSONResponse(content=response.json())
 
 ''' User service endpoints '''
 

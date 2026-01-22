@@ -5,6 +5,7 @@ jinja2
 bcrypt
 httpx
 python-multipart
+Pillow
 
 # psycopg2-binary
 # sqlalchemy

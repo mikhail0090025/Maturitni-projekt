@@ -8,7 +8,7 @@ git curl wget libgomp1 libstdc++6 \
 && rm -rf /var/lib/apt/lists/*
 
 # 2️⃣ СНАЧАЛА numpy (КРИТИЧНО)
-RUN pip install --no-cache-dir numpy==1.24.1
+RUN pip install --no-cache-dir numpy==1.26.4
 
 # 3️⃣ Потом torch + torchvision
 RUN pip install --no-cache-dir \
@@ -23,7 +23,10 @@ uvicorn[standard] \
 requests \
 pydantic \
 pandas \
-plotly
+plotly \
+matplotlib \
+kagglehub \
+python-multipart
 
 COPY . .
 
