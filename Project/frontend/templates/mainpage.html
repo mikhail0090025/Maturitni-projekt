@@ -8,10 +8,11 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <!-- Babel для JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="/styles/mainpage.css">
 {% endblock %}
 
 {% block content %}
-    <div>
+    <div class="profile-container">
         <div class="inline-block">
             <h1>{{ name }} {{ surname }}</h1>
             <h6>{{ username }}</h6>

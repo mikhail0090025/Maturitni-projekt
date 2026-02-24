@@ -18,10 +18,32 @@ document.getElementById("settings_button").addEventListener("click", async () =>
     window.location.href = "/settings_page";
 });
 
-/*
-fetch("/my_projects", {
-    method: "GET",
-    credentials: "include"
-}).then(response => response.json()).then(data => {
-    console.log(data);
-}).catch(error => console.error(error));*/
+document.addEventListener("DOMContentLoaded", () => {
+
+    const container = document.querySelector(".profile-container");
+    const projects = document.getElementById("projects");
+
+    // Плавное появление профиля
+    setTimeout(() => {
+        container.classList.add("show");
+    }, 150);
+
+    // Отдельное появление проектов (чтобы было ощущение динамики)
+    setTimeout(() => {
+        projects.classList.add("show-projects");
+    }, 500);
+
+});
+
+const buttons = document.querySelectorAll(".btn");
+
+buttons.forEach((btn, index) => {
+    btn.style.opacity = "0";
+    btn.style.transform = "translateY(15px)";
+    btn.style.transition = "all 0.4s ease";
+
+    setTimeout(() => {
+        btn.style.opacity = "1";
+        btn.style.transform = "translateY(0)";
+    }, 200 + index * 100);
+});

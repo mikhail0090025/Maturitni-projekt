@@ -3,6 +3,7 @@
 {% block title %}Login{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="/styles/auth_form_animations.css">
 {% endblock %}
 
 {% block content %}
@@ -21,4 +22,16 @@
         <p class="lead">Don't have an account? <a href="/registration_page">Register here</a>.</p>
     </div>
     <script src="/js/login.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const card = document.querySelector(".auth-card");
+
+            // Плавное появление
+            setTimeout(() => {
+                card.classList.add("show");
+            }, 150);
+
+            // Небольшой эффект shake при submit (если захочешь позже добавить валидацию)
+        });
+    </script>
 {% endblock %}

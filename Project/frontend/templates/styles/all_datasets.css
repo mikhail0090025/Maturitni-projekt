@@ -1,0 +1,104 @@
+/* === DATASETS GRID === */
+.datasets-grid {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+/* === DATASET CARD === */
+.dataset-card-item {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 18px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.06);
+    transition: all 0.35s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.dataset-card-item.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dataset-card-item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.12);
+}
+
+/* кнопки внутри карточки */
+.dataset-card-item .btn {
+    margin-top: 10px;
+    margin-right: 8px;
+    transition: all 0.25s ease !important;
+}
+
+.dataset-card-item .btn:hover {
+    transform: translateY(-2px);
+}
+
+/* удаление анимация */
+.dataset-card-item.removing {
+    opacity: 0;
+    transform: scale(0.9);
+}
+
+/* ===== Toast ===== */
+.custom-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #1e293b;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.custom-toast.success {
+    background: #16a34a;
+}
+
+.custom-toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===== Confirm Modal ===== */
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+    z-index: 9998;
+}
+
+.confirm-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    text-align: center;
+    animation: scaleIn 0.3s ease;
+}
+
+.confirm-box .btn {
+    margin: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

@@ -1,0 +1,73 @@
+/* === PROFILE CONTAINER === */
+.profile-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 2rem;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.07);
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s ease;
+}
+
+.profile-container.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* inline blocks чуть живее */
+.inline-block {
+    transition: transform 0.3s ease;
+}
+
+.inline-block:hover {
+    transform: translateY(-4px);
+}
+
+/* === BUTTON DEPTH EFFECT === */
+.btn {
+    transition: all 0.25s ease !important;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+/* Группы кнопок — чтобы не выглядело как хаос */
+.profile-container > div:nth-child(3) {
+    margin-top: 25px;
+}
+
+.profile-container a {
+    text-decoration: none;
+}
+
+/* === PROJECTS BLOCK ANIMATION === */
+#projects {
+    margin-top: 30px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease;
+}
+
+#projects.show-projects {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.profile-container h1 {
+    background-size: 200% 200%;
+    animation: gradientMove 6s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}

@@ -208,7 +208,9 @@ async def set_training_config(request: Request):
 def initialize_training(project_id: int, request: Request):
 
     request_get_config = requests.get(f"http://db_service:8002/projects/{project_id}")
+    print("Fetching project config for training initialization...")
     if request_get_config.status_code >= 400:
+        print("Failed to fetch project for training config")
         return JSONResponse(content={"detail": "Failed to fetch project for training config"}, status_code=500)
     project = request_get_config.json()
     print("Project training config:", project)

@@ -3,6 +3,7 @@
 {% block title %}All Datasets{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="/styles/all_datasets.css">
 {% endblock %}
 
 {% block content %}
@@ -12,9 +13,9 @@
 -->
 <a href="/new_dataset_page"><button type="button" class="btn btn-primary">New Dataset</button></a>
 {% if datasets %}
-    <ul>
+    <div class="datasets-grid">
     {% for dataset in datasets %}
-        <li>
+        <div class="dataset-card-item">
             <strong>{{ dataset.name }}</strong><br>
             Type: {{ dataset.dataset_type_description }}<br>
             <!-- Storage ID: {{ dataset.storage_id }}<br> -->
@@ -22,9 +23,9 @@
             Created At: {{ dataset.created_at }}
             <button class="btn btn-danger" name="delete-button" storage-id="{{ dataset.storage_id }}">Delete</button>
             <button class="btn btn-primary" name="download-button" storage-id="{{ dataset.storage_id }}">Download</button>
-        </li>
+        </div>
     {% endfor %}
-    </ul>
+    </div>
 {% else %}
     <p>No datasets available.</p>
 {% endif %}
@@ -60,5 +61,93 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    // Плавное появление карточек
+    const cards = document.querySelectorAll(".dataset-card-item");
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.classList.add("show");
+        }, 150 + index * 100);
+    });
+
+    // DELETE
+    document.querySelectorAll('button[name="delete-button"]').forEach(btn => {
+        btn.addEventListener("click", async () => {
+
+            const card = btn.closest(".dataset-card-item");
+            const storageId = btn.getAttribute("storage-id");
+
+            showConfirm("Delete this dataset?", async () => {
+
+                try {
+                    const response = await fetch(`/datasets/by_storage/${storageId}`, {
+                        method: "DELETE"
+                    });
+
+                    if (response.ok) {
+                        card.classList.add("removing");
+                        setTimeout(() => card.remove(), 300);
+                        showToast("Dataset deleted", true);
+                    } else {
+                        const data = await response.json();
+                        showToast("Error: " + data.detail, false);
+                    }
+                } catch {
+                    showToast("Network error", false);
+                }
+
+            });
+
+        });
+    });
+
+    // DOWNLOAD
+    document.querySelectorAll('button[name="download-button"]').forEach(btn => {
+        btn.addEventListener("click", () => {
+            const storageId = btn.getAttribute("storage-id");
+            window.location.href = `/datasets/download/${storageId}`;
+        });
+    });
+
+});
+
+/* ===== UI HELPERS ===== */
+
+function showToast(text, success) {
+    const toast = document.createElement("div");
+    toast.textContent = text;
+    toast.className = "custom-toast";
+    if (success) toast.classList.add("success");
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add("visible"), 10);
+    setTimeout(() => {
+        toast.classList.remove("visible");
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function showConfirm(message, onConfirm) {
+    const overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+
+    overlay.innerHTML = `
+        <div class="confirm-box">
+            <p>${message}</p>
+            <button class="btn btn-danger confirm-yes">Delete</button>
+            <button class="btn btn-secondary confirm-no">Cancel</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector(".confirm-no").onclick = () => overlay.remove();
+    overlay.querySelector(".confirm-yes").onclick = () => {
+        overlay.remove();
+        onConfirm();
+    };
+}
 </script>
 {% endblock %}

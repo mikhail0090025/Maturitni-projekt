@@ -3,11 +3,12 @@
 {% block title %}New dataset{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="/styles/dataset_page_anim.css">
 {% endblock %}
 
 {% block content %}
-<h1>New Dataset</h1>
-<div>
+<div class="dataset-card">
+    <h1>New Dataset</h1>
     <label for="dataset-name">Name:</label>
     <input type="text" id="dataset-name" name="dataset-name" required><br><br>
     <label for="description">Description (Optional):</label><br>
@@ -52,6 +53,107 @@ document.getElementById("upload_dataset_button").addEventListener("click", async
     }
 
     alert("Dataset uploaded successfully!");
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const card = document.querySelector(".dataset-card");
+    const fileInput = document.getElementById("file");
+    const button = document.getElementById("upload_dataset_button");
+
+    // Плавное появление карточки
+    setTimeout(() => card.classList.add("show"), 150);
+
+    // Drag & drop визуальный эффект
+    fileInput.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        fileInput.classList.add("dragover");
+    });
+
+    fileInput.addEventListener("dragleave", () => {
+        fileInput.classList.remove("dragover");
+    });
+
+    fileInput.addEventListener("drop", () => {
+        fileInput.classList.remove("dragover");
+    });
+
+    button.addEventListener("click", async () => {
+
+        const name = document.getElementById("dataset-name").value;
+        const description = document.getElementById("description").value;
+
+        if (!name.trim()) {
+            showMessage("Write dataset name!", false);
+            return;
+        }
+
+        if (fileInput.files.length === 0) {
+            showMessage("Choose ZIP-file!", false);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("name", name);
+        formData.append("description", description);
+
+        try {
+            button.classList.add("loading");
+            button.textContent = "Uploading...";
+
+            const response = await fetch("/upload/zip", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                showMessage("Error: " + result.detail, false);
+                button.textContent = "Upload Dataset";
+                button.classList.remove("loading");
+                return;
+            }
+
+            showMessage("Dataset uploaded successfully!", true);
+            button.textContent = "Upload Dataset";
+            button.classList.remove("loading");
+
+        } catch (err) {
+            showMessage("Upload failed!", false);
+            button.textContent = "Upload Dataset";
+            button.classList.remove("loading");
+        }
+    });
+
+    function showMessage(text, success) {
+        const message = document.createElement("div");
+        message.textContent = text;
+        message.style.marginTop = "15px";
+        message.style.padding = "10px";
+        message.style.borderRadius = "8px";
+        message.style.transition = "all 0.4s ease";
+        message.style.opacity = "0";
+
+        if (success) {
+            message.style.background = "#dcfce7";
+            message.style.color = "#166534";
+        } else {
+            message.style.background = "#fee2e2";
+            message.style.color = "#991b1b";
+        }
+
+        document.querySelector(".dataset-card").appendChild(message);
+
+        setTimeout(() => message.style.opacity = "1", 10);
+
+        setTimeout(() => {
+            message.style.opacity = "0";
+            setTimeout(() => message.remove(), 400);
+        }, 3000);
+    }
+
 });
 </script>
 {% endblock %}
