@@ -519,7 +519,8 @@ function Editor() {
       const parsed = JSON.parse(json);
       setLayers(parsed);
     } catch (e) {
-      alert("Invalid JSON");
+      // alert("Invalid JSON");
+      console.log("Invalid JSON");
     }
   };
 
