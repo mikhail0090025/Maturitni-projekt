@@ -1,0 +1,30 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 1. Переходим строго в папку проекта (проверь путь через pwd!)
+            cd /root
+
+            # 2. Забираем свежий код из GitHub
+            git pull origin main
+
+            # 3. Пересобираем и запускаем контейнеры
+            # Добавил флаг --remove-orphans, чтобы старые ненужные сервисы не висели в памяти
+            docker compose up -d --build --remove-orphans
