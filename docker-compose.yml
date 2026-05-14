@@ -82,6 +82,7 @@ services:
       - "8002:8002"
     volumes:
       - ./db_service/alembic/versions:/app/alembic/versions
+      - ./db_service:/app/alembic/versions
 
   projects_manager:
     build: ./projects_manager
