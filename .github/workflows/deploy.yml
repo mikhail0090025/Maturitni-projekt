@@ -20,8 +20,8 @@ jobs:
           password: ${{ secrets.PASSWORD }} # Заменили key на password
           script: |
             # Замени /root/my-project на точный путь к твоему годовому проекту
-            # cd /root/Maturitni-projekt 
-            cd /root 
+            cd /root/Maturitni-projekt 
+            # cd /root 
             
             git pull origin main
             
