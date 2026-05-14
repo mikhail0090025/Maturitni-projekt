@@ -12,19 +12,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Executing remote ssh commands
+      - name: Executing remote ssh commands using password
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          password: ${{ secrets.PASSWORD }} # Заменили key на password
           script: |
-            # 1. Переходим строго в папку проекта (проверь путь через pwd!)
-            cd /root
-
-            # 2. Забираем свежий код из GitHub
+            # Замени /root/my-project на точный путь к твоему годовому проекту
+            # cd /root/Maturitni-projekt 
+            cd /root 
+            
             git pull origin main
-
-            # 3. Пересобираем и запускаем контейнеры
-            # Добавил флаг --remove-orphans, чтобы старые ненужные сервисы не висели в памяти
+            
+            # Используем docker compose (через пробел), так как в Ubuntu 24.04 это стандарт
             docker compose up -d --build --remove-orphans
